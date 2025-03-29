@@ -1,0 +1,2 @@
+# CliniQ
+Medical Appointment Management
