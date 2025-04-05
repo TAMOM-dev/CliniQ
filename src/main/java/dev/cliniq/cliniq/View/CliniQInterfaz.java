@@ -2,115 +2,321 @@ package dev.cliniq.cliniq.View;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.FlowLayout;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.SwingConstants;
 
 import org.springframework.stereotype.Component;
-
 import org.springframework.beans.factory.annotation.Autowired;
 
-
+/**
+ * Clase que representa la interfaz gráfica de la aplicación CliniQ.
+ * 
+ * @author CliniQ
+ */
 @Component
 public class CliniQInterfaz extends JFrame {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+    
+    private JPanel contentPanel;
+    private JPanel menuPanel;
+    private JLabel headerLabel;
+    
+    // Ancho fijo del menú
+    private int menuWidth = 150;
+    
+    // Colores de la aplicación
+    private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
+    private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
+    private final Color COLOR_BACKGROUND = Color.WHITE;
+    private final Color COLOR_TEXT = new Color(30, 30, 30);
+    private final Color COLOR_BUTTON = new Color(0, 188, 212); // Cyan más claro
+    
+    // Paneles de contenido
+    private JPanel inicioPanel;
+    private PacientePanel pacientePanel;
+    private CitasPanel citasPanel;
+    private MedicosPanel medicosPanel;
+    private FacturacionPanel facturacionPanel;
 
     @Autowired
     public CliniQInterfaz() {
         IniciarForm();
     }
     
-	private void IniciarForm() {
+    private void IniciarForm() {
         setTitle("CliniQ");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1200, 700); // Tamaño por defecto
+        setLocationRelativeTo(null); // Centrar en pantalla
         setExtendedState(JFrame.MAXIMIZED_BOTH); // Maximizar la ventana
         setUndecorated(true); // Ocultar la barra de título
 
-        JPanel mainPanel = new JPanel(new BorderLayout());
+        // Panel principal que contendrá todo
+        contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(COLOR_BACKGROUND);
 
         // Panel izquierdo para el menú
-        JPanel menuPanel = new JPanel();
+        menuPanel = new JPanel();
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
-        menuPanel.setBackground(new Color(240, 240, 240)); // Color gris claro
-        menuPanel.setPreferredSize(new Dimension(150, getHeight())); // Ancho fijo
+        menuPanel.setBackground(COLOR_PRIMARY); // Color cyan
+        menuPanel.setPreferredSize(new Dimension(menuWidth, getHeight())); // Ancho fijo
+        
+        // Crear botones del menú lateral con iconos
+        JButton inicioButton = createMenuButton("Inicio", "icons/inicio.png");
+        JButton pacienteButton = createMenuButton("Pacientes", "icons/paciente.png");
+        JButton citasButton = createMenuButton("Citas", "icons/cita.png");
+        JButton medicosButton = createMenuButton("Médicos", "icons/medico.png");
+        JButton facturacionButton = createMenuButton("Facturación", "icons/factura.png");
 
-        JButton inicioButton = createMenuButton("Inicio");
-        JButton pacienteButton = createMenuButton("Paciente");
-        JButton citasButton = createMenuButton("Citas");
-        JButton medicosButton = createMenuButton("Medicos");
-        JButton estudiosButton = createMenuButton("Estudios");
-        JButton facturacionButton = createMenuButton("Facturacion");
+        // Configurar los event listeners para la navegación
+        inicioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mostrarPanel("Inicio");
+            }
+        });
+        
+        pacienteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mostrarPanel("Pacientes");
+            }
+        });
+        
+        citasButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mostrarPanel("Citas");
+            }
+        });
+        
+        medicosButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mostrarPanel("Médicos");
+            }
+        });
+        
+        facturacionButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mostrarPanel("Facturación");
+            }
+        });
 
-        menuPanel.add(Box.createVerticalGlue()); // Espacio superior
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 30))); // Espacio superior
         menuPanel.add(inicioButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Espacio entre botones
         menuPanel.add(pacienteButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(citasButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(medicosButton);
-        menuPanel.add(estudiosButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(facturacionButton);
         menuPanel.add(Box.createVerticalGlue()); // Espacio inferior
 
-        mainPanel.add(menuPanel, BorderLayout.WEST);
+        // Panel central para el contenido dinámico
+        JPanel dynamicContentPanel = new JPanel(new BorderLayout());
+        dynamicContentPanel.setBackground(COLOR_BACKGROUND); // Fondo blanco
 
-        // Panel central para el contenido principal
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(new Color(255, 240, 245)); // Color rosa claro (similar al fondo)
+        // Encabezado en el centro con botón de cierre
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(COLOR_PRIMARY); // Color cyan para el encabezado
+        
+        // Panel para el título centrado
+        JPanel headerTitlePanel = new JPanel();
+        headerTitlePanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        headerTitlePanel.setBackground(COLOR_PRIMARY);
+        headerLabel = new JLabel("Inicio");
+        headerLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        headerLabel.setForeground(COLOR_BACKGROUND); // Texto blanco
+        headerTitlePanel.add(headerLabel);
+        
+        // Panel para el botón de cierre (a la derecha)
+        JPanel closePanel = new JPanel();
+        closePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        closePanel.setBackground(COLOR_PRIMARY);
+        JButton closeButton = new JButton("X");
+        closeButton.setFont(new Font("Arial", Font.BOLD, 14));
+        closeButton.setForeground(COLOR_BACKGROUND);
+        closeButton.setBackground(COLOR_PRIMARY);
+        closeButton.setBorderPainted(false);
+        closeButton.setFocusPainted(false);
+        closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        closeButton.addActionListener(e -> System.exit(0));
+        closePanel.add(closeButton);
+        
+        headerPanel.add(headerTitlePanel, BorderLayout.CENTER);
+        headerPanel.add(closePanel, BorderLayout.EAST);
+        dynamicContentPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Encabezado "Inicio" en el centro
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        headerPanel.setBackground(new Color(220, 220, 220)); // Gris más oscuro para el encabezado
-        JLabel inicioLabel = new JLabel("Inicio");
-        inicioLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        headerPanel.add(inicioLabel);
-        contentPanel.add(headerPanel, BorderLayout.NORTH);
+        // Inicializar todos los paneles
+        pacientePanel = new PacientePanel();
+        citasPanel = new CitasPanel();
+        medicosPanel = new MedicosPanel();
+        facturacionPanel = new FacturacionPanel();
+        
+        // Crear panel simple para la página de inicio
+        inicioPanel = new JPanel(new BorderLayout());
+        inicioPanel.setBackground(COLOR_BACKGROUND);
+        
+        // Contenido de bienvenida en el panel de inicio centrado
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        centerPanel.setBackground(COLOR_BACKGROUND);
+        
+        JPanel welcomePanel = new JPanel();
+        welcomePanel.setLayout(new BoxLayout(welcomePanel, BoxLayout.Y_AXIS));
+        welcomePanel.setBackground(COLOR_BACKGROUND);
+        welcomePanel.setBorder(BorderFactory.createEmptyBorder(100, 50, 100, 50));
+        
+        JLabel welcomeLabel = new JLabel("Bienvenido a CliniQ");
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        welcomeLabel.setForeground(COLOR_TEXT);
+        welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        JLabel descriptionLabel = new JLabel("Sistema de Gestión de Citas Médicas");
+        descriptionLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        descriptionLabel.setForeground(COLOR_TEXT);
+        descriptionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        // Paneles para centrar cada elemento
+        JPanel welcomeTitlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        welcomeTitlePanel.setBackground(COLOR_BACKGROUND);
+        welcomeTitlePanel.add(welcomeLabel);
+        
+        JPanel descPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        descPanel.setBackground(COLOR_BACKGROUND);
+        descPanel.add(descriptionLabel);
+        
+        welcomePanel.add(Box.createVerticalGlue());
+        welcomePanel.add(welcomeTitlePanel);
+        welcomePanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        welcomePanel.add(descPanel);
+        welcomePanel.add(Box.createVerticalGlue());
+        
+        centerPanel.add(welcomePanel);
+        inicioPanel.add(centerPanel, BorderLayout.CENTER);
+        
+        // Mostrar inicialmente el panel de inicio
+        dynamicContentPanel.add(inicioPanel, BorderLayout.CENTER);
+        headerLabel.setText("Inicio");
 
-        // Contenido principal centrado
-        JPanel centerContentPanel = new JPanel();
-        centerContentPanel.setLayout(new BoxLayout(centerContentPanel, BoxLayout.Y_AXIS));
-        centerContentPanel.setBackground(new Color(255, 240, 245));
-        centerContentPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50)); // Margenes
+        // Añadir los paneles principales
+        contentPanel.add(menuPanel, BorderLayout.WEST);
+        contentPanel.add(dynamicContentPanel, BorderLayout.CENTER);
 
-        JLabel cliniqLabel = new JLabel("CliniQ");
-        cliniqLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        cliniqLabel.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
-
-        JLabel sistemaGestionLabel = new JLabel("Sistema Gestion de Citas");
-        sistemaGestionLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        sistemaGestionLabel.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
-
-        centerContentPanel.add(Box.createVerticalGlue());
-        centerContentPanel.add(cliniqLabel);
-        centerContentPanel.add(sistemaGestionLabel);
-        centerContentPanel.add(Box.createVerticalGlue());
-
-        contentPanel.add(centerContentPanel, BorderLayout.CENTER);
-
-        mainPanel.add(contentPanel, BorderLayout.CENTER);
-
-        add(mainPanel);
+        getContentPane().add(contentPanel);
         setVisible(true);
     }
+    
+    // Método para cambiar entre paneles
+    private void mostrarPanel(String panelName) {
+        // Obtener el panel de contenido dinámico (está en el centro del contentPanel)
+        JPanel dynamicContentPanel = (JPanel) contentPanel.getComponent(1);
+        
+        // Guardar referencia al panel del header
+        JPanel headerPanel = (JPanel) headerLabel.getParent().getParent();
+        
+        // Limpiar el panel de contenido (excepto el header)
+        dynamicContentPanel.removeAll();
+        
+        // Actualizar el encabezado
+        headerLabel.setText(panelName);
+        
+        // Volver a añadir el header
+        dynamicContentPanel.add(headerPanel, BorderLayout.NORTH);
+        
+        // Mostrar el panel correspondiente
+        switch (panelName) {
+            case "Inicio":
+                dynamicContentPanel.add(inicioPanel, BorderLayout.CENTER);
+                break;
+            case "Pacientes":
+                dynamicContentPanel.add(pacientePanel, BorderLayout.CENTER);
+                break;
+            case "Citas":
+                dynamicContentPanel.add(citasPanel, BorderLayout.CENTER);
+                break;
+            case "Médicos":
+                dynamicContentPanel.add(medicosPanel, BorderLayout.CENTER);
+                break;
+            case "Facturación":
+                dynamicContentPanel.add(facturacionPanel, BorderLayout.CENTER);
+                break;
+        }
+        
+        // Refrescar el panel
+        dynamicContentPanel.revalidate();
+        dynamicContentPanel.repaint();
+    }
 
-    private JButton createMenuButton(String text) {
+    private JButton createMenuButton(String text, String iconPath) {
+        // Crear el botón con texto
         JButton button = new JButton(text);
+        
+        // Configurar el icono si existe
+        if (iconPath != null) {
+            try {
+                ImageIcon icon = new ImageIcon(iconPath);
+                if (icon.getIconWidth() > 0) { // Verifica si el icono se cargó correctamente
+                    // Redimensionar el icono a un tamaño adecuado
+                    Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+                    button.setIcon(new ImageIcon(img));
+                    button.setHorizontalAlignment(SwingConstants.LEFT);
+                    button.setHorizontalTextPosition(SwingConstants.RIGHT);
+                    button.setIconTextGap(10);
+                } else {
+                    System.err.println("No se pudo cargar el icono: " + iconPath);
+                }
+            } catch (Exception e) {
+                System.err.println("Error al cargar el icono: " + e.getMessage());
+            }
+        }
+        
         button.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
-        button.setBackground(new Color(220, 220, 220)); // Gris claro para los botones del menú
-        button.setForeground(Color.BLACK);
+        button.setBackground(COLOR_PRIMARY); // Color cyan para los botones
+        button.setForeground(COLOR_BACKGROUND); // Texto blanco
         button.setOpaque(true);
-        button.setPreferredSize(new Dimension(140, 40));
-        button.setMaximumSize(new Dimension(140, 40));
+        button.setPreferredSize(new Dimension(menuWidth - 10, 40));
+        button.setMaximumSize(new Dimension(menuWidth - 10, 40));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Efecto hover
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(0, 140, 168)); // Cyan más oscuro al pasar el mouse
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(COLOR_PRIMARY); // Color original al salir
+            }
+        });
+        
         return button;
     }
-
 }
