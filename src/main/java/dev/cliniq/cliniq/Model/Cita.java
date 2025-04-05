@@ -1,8 +1,6 @@
 package dev.cliniq.cliniq.Model;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -12,7 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -50,6 +47,5 @@ public class Cita {
     @OneToOne(mappedBy = "cita", cascade = CascadeType.ALL)
     private Factura factura;
 
-    @OneToMany(mappedBy = "cita", cascade = CascadeType.ALL)
-    private List<Picture> pictures = new ArrayList<>();
+    
 }

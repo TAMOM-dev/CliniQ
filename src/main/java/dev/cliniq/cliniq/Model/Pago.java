@@ -2,8 +2,6 @@ package dev.cliniq.cliniq.Model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -12,8 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,26 +18,25 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data
-@Table(name = "factura")
+@Table(name = "pagos")
 @NoArgsConstructor
 @AllArgsConstructor
-public class Factura {
+public class Pago {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_factura")
-    private long idFactura;
+    @Column(name = "id_pago")
+    private long idPago;
 
-    @OneToOne
-    @JoinColumn(name = "id_cita", nullable = false)
-    private Cita cita;
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "id_factura")
+    private Factura factura;
 
-    @Column(name = "fecha_emision")
-    private LocalDate fechaEmision;
+    @Column(name = "fecha_pago")
+    private LocalDate fechaPago;
 
-    private BigDecimal total;
-    private String estado;
+    @Column(name = "metodo_pago")
+    private String metodoPago;
 
-    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL)
-    private List<Pago> pagos = new ArrayList<>();
+    private BigDecimal monto;
 }
