@@ -19,9 +19,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import javax.swing.SwingConstants;
 
 import org.springframework.stereotype.Component;
@@ -44,12 +42,18 @@ public class CliniQInterfaz extends JFrame {
     // Ancho fijo del menú
     private int menuWidth = 150;
     
+    // Botones del menú
+    private JButton activeButton; // Botón actualmente seleccionado
+    private JButton inicioButton;
+    private JButton pacienteButton;
+    private JButton citasButton;
+    private JButton medicosButton;
+    private JButton facturacionButton;
+    
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
-    private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
     private final Color COLOR_BACKGROUND = Color.WHITE;
     private final Color COLOR_TEXT = new Color(30, 30, 30);
-    private final Color COLOR_BUTTON = new Color(0, 188, 212); // Cyan más claro
     
     // Paneles de contenido
     private JPanel inicioPanel;
@@ -82,16 +86,17 @@ public class CliniQInterfaz extends JFrame {
         menuPanel.setPreferredSize(new Dimension(menuWidth, getHeight())); // Ancho fijo
         
         // Crear botones del menú lateral con iconos
-        JButton inicioButton = createMenuButton("Inicio", "icons/inicio.png");
-        JButton pacienteButton = createMenuButton("Pacientes", "icons/paciente.png");
-        JButton citasButton = createMenuButton("Citas", "icons/cita.png");
-        JButton medicosButton = createMenuButton("Médicos", "icons/medico.png");
-        JButton facturacionButton = createMenuButton("Facturación", "icons/factura.png");
+        inicioButton = createMenuButton("Inicio", "icons/inicio.png");
+        pacienteButton = createMenuButton("Pacientes", "icons/paciente.png");
+        citasButton = createMenuButton("Citas", "icons/cita.png");
+        medicosButton = createMenuButton("Médicos", "icons/medico.png");
+        facturacionButton = createMenuButton("Facturación", "icons/factura.png");
 
         // Configurar los event listeners para la navegación
         inicioButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                setActiveButton(inicioButton);
                 mostrarPanel("Inicio");
             }
         });
@@ -99,6 +104,7 @@ public class CliniQInterfaz extends JFrame {
         pacienteButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                setActiveButton(pacienteButton);
                 mostrarPanel("Pacientes");
             }
         });
@@ -106,6 +112,7 @@ public class CliniQInterfaz extends JFrame {
         citasButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                setActiveButton(citasButton);
                 mostrarPanel("Citas");
             }
         });
@@ -113,6 +120,7 @@ public class CliniQInterfaz extends JFrame {
         medicosButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                setActiveButton(medicosButton);
                 mostrarPanel("Médicos");
             }
         });
@@ -120,6 +128,7 @@ public class CliniQInterfaz extends JFrame {
         facturacionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                setActiveButton(facturacionButton);
                 mostrarPanel("Facturación");
             }
         });
@@ -221,6 +230,7 @@ public class CliniQInterfaz extends JFrame {
         // Mostrar inicialmente el panel de inicio
         dynamicContentPanel.add(inicioPanel, BorderLayout.CENTER);
         headerLabel.setText("Inicio");
+        setActiveButton(inicioButton); // Establecer el botón de inicio como activo inicialmente
 
         // Añadir los paneles principales
         contentPanel.add(menuPanel, BorderLayout.WEST);
@@ -271,6 +281,24 @@ public class CliniQInterfaz extends JFrame {
         dynamicContentPanel.repaint();
     }
 
+    /**
+     * Método para establecer el botón activo y actualizar la interfaz visual
+     * @param button Botón que debe marcarse como activo
+     */
+    private void setActiveButton(JButton button) {
+        // Si ya hay un botón activo, restaurar su color original
+        if (activeButton != null && activeButton != button) {
+            activeButton.setBackground(COLOR_PRIMARY);
+        }
+        
+        // Establecer el nuevo botón activo
+        activeButton = button;
+        if (activeButton != null) {
+            // Aplicar color más oscuro al botón activo
+            activeButton.setBackground(new Color(0, 120, 148)); // Color aún más oscuro para el botón activo
+        }
+    }
+    
     private JButton createMenuButton(String text, String iconPath) {
         // Crear el botón con texto
         JButton button = new JButton(text);
@@ -304,16 +332,22 @@ public class CliniQInterfaz extends JFrame {
         button.setMaximumSize(new Dimension(menuWidth - 10, 40));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        // Efecto hover
+        // Efecto hover (solo cuando el botón no está activo)
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(0, 140, 168)); // Cyan más oscuro al pasar el mouse
+                // Si no es el botón activo, aplicar efecto hover
+                if (button != activeButton) {
+                    button.setBackground(new Color(0, 140, 168)); // Cyan más oscuro al pasar el mouse
+                }
             }
             
             @Override
             public void mouseExited(MouseEvent e) {
-                button.setBackground(COLOR_PRIMARY); // Color original al salir
+                // Si no es el botón activo, restaurar color original
+                if (button != activeButton) {
+                    button.setBackground(COLOR_PRIMARY); // Color original al salir
+                }
             }
         });
         

@@ -76,6 +76,7 @@ public class PacientePanel extends JPanel {
         tablePacientes.setSelectionForeground(COLOR_TEXT);
         tablePacientes.setGridColor(new Color(240, 240, 240));
         tablePacientes.setBorder(BorderFactory.createLineBorder(COLOR_SECONDARY));
+
         
         JScrollPane scrollPane = new JScrollPane(tablePacientes);
         scrollPane.setBorder(BorderFactory.createLineBorder(COLOR_PRIMARY, 1));
@@ -209,4 +210,6 @@ public class PacientePanel extends JPanel {
         txtFechaNacimiento.setText("");
         txtTelefono.setText("");
     }
+
+
 }
