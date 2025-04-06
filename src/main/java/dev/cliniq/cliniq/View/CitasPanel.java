@@ -21,6 +21,7 @@ public class CitasPanel extends JPanel {
     
     private JTextField txtBuscar;
     private JTable tableCitas;
+    private DefaultTableModel tableModelCitas;
     private JTextField txtIdCita;
     private JTextField txtPaciente;
     private JTextField txtMedico;
@@ -65,15 +66,21 @@ public class CitasPanel extends JPanel {
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 5));
         
         // Crear modelo de tabla
-        DefaultTableModel tableModel = new DefaultTableModel();
-        tableModel.addColumn("ID");
-        tableModel.addColumn("Paciente");
-        tableModel.addColumn("Médico");
-        tableModel.addColumn("Fecha/Hora");
-        tableModel.addColumn("Consultorio");
-        tableModel.addColumn("Estado");
+        this.tableModelCitas = new DefaultTableModel(0, 6);
+        String[] columnas = {"ID", "Paciente", "Médico", "Fecha/Hora", "Consultorio", "Estado"};
+        tableModelCitas.setColumnIdentifiers(columnas);
+
+        //Inicializar la tabla
+        this.tableCitas = new JTable(tableModelCitas);
+        // DefaultTableModel tableModel = new DefaultTableModel();
+        // tableModel.addColumn("ID");
+        // tableModel.addColumn("Paciente");
+        // tableModel.addColumn("Médico");
+        // tableModel.addColumn("Fecha/Hora");
+        // tableModel.addColumn("Consultorio");
+        // tableModel.addColumn("Estado");
         
-        tableCitas = new JTable(tableModel);
+        tableCitas = new JTable(tableModelCitas);
         tableCitas.setRowHeight(25);
         tableCitas.getTableHeader().setBackground(COLOR_PRIMARY);
         tableCitas.getTableHeader().setForeground(COLOR_BACKGROUND);

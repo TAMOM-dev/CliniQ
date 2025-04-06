@@ -21,6 +21,7 @@ public class FacturacionPanel extends JPanel {
 
     private JTextField txtBuscar;
     private JTable tableFacturas;
+    private DefaultTableModel tableModelFacturas;
     private JTextField txtIdFactura;
     private JTextField txtCita;
     private JTextField txtFechaEmision;
@@ -63,14 +64,21 @@ public class FacturacionPanel extends JPanel {
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 5));
 
         // Crear modelo de tabla
-        DefaultTableModel tableModel = new DefaultTableModel();
-        tableModel.addColumn("ID");
-        tableModel.addColumn("Cita");
-        tableModel.addColumn("Fecha Emisión");
-        tableModel.addColumn("Total");
-        tableModel.addColumn("Estado");
+        this.tableModelFacturas = new DefaultTableModel(0, 5);
+        String[] columnas = {"ID", "Cita", "Fecha Emisión", "Total", "Estado"};
+        tableModelFacturas.setColumnIdentifiers(columnas);
 
-        tableFacturas = new JTable(tableModel);
+        //Inicializar la tabla
+        this.tableFacturas = new JTable(tableModelFacturas);
+
+        // DefaultTableModel tableModel = new DefaultTableModel();
+        // tableModel.addColumn("ID");
+        // tableModel.addColumn("Cita");
+        // tableModel.addColumn("Fecha Emisión");
+        // tableModel.addColumn("Total");
+        // tableModel.addColumn("Estado");
+
+        tableFacturas = new JTable(tableModelFacturas);
         tableFacturas.setRowHeight(25);
         tableFacturas.getTableHeader().setBackground(COLOR_PRIMARY);
         tableFacturas.getTableHeader().setForeground(COLOR_BACKGROUND);

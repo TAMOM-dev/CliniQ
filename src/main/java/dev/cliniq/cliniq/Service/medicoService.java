@@ -3,10 +3,12 @@ package dev.cliniq.cliniq.Service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import dev.cliniq.cliniq.Model.Medico;
 import dev.cliniq.cliniq.Repository.medicoRepository;
 
+@Service
 public class medicoService implements IMedicoService {
 
     @Autowired

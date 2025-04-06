@@ -8,10 +8,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import dev.cliniq.cliniq.Service.medicoService;
 
 @Component
 public class MedicosPanel extends JPanel {
+    @Autowired
+    private medicoService medicoService;
+
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
     private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
@@ -21,6 +27,7 @@ public class MedicosPanel extends JPanel {
     
     private JTextField txtBuscar;
     private JTable tableMedicos;
+    private DefaultTableModel tableModelMedicos;
     private JTextField txtIdMedico;
     private JTextField txtNombre;
     private JTextField txtApellido;
@@ -30,7 +37,14 @@ public class MedicosPanel extends JPanel {
     private JButton btnGuardar;
     private JButton btnLimpiar;
 
-    public MedicosPanel() {
+    @Autowired
+    public MedicosPanel(medicoService medicoServicio) {
+        this.medicoService = medicoServicio;
+        initComponents();
+        listarMedicos();
+    }
+
+    private void initComponents() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BACKGROUND); // Fondo blanco
 
@@ -63,15 +77,23 @@ public class MedicosPanel extends JPanel {
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 5));
         
         // Crear modelo de tabla
-        DefaultTableModel tableModel = new DefaultTableModel();
-        tableModel.addColumn("ID");
-        tableModel.addColumn("Nombre");
-        tableModel.addColumn("Apellido");
-        tableModel.addColumn("Email");
-        tableModel.addColumn("Teléfono");
-        tableModel.addColumn("Especialidad");
+        this.tableModelMedicos = new DefaultTableModel(0, 6);
+        String[] columnas = {"ID", "Nombre", "Apellido", "Email", "Teléfono", "Especialidad"};
+        tableModelMedicos.setColumnIdentifiers(columnas);
+
+        //Instanciar la tabla
+        this.tableMedicos = new JTable(tableModelMedicos);
+
+        // DefaultTableModel tableModel = new DefaultTableModel();
+
+        // tableModel.addColumn("ID");
+        // tableModel.addColumn("Nombre");
+        // tableModel.addColumn("Apellido");
+        // tableModel.addColumn("Email");
+        // tableModel.addColumn("Teléfono");
+        // tableModel.addColumn("Especialidad");
         
-        tableMedicos = new JTable(tableModel);
+        tableMedicos = new JTable(tableModelMedicos);
         tableMedicos.setRowHeight(25);
         tableMedicos.getTableHeader().setBackground(COLOR_PRIMARY);
         tableMedicos.getTableHeader().setForeground(COLOR_BACKGROUND);
@@ -176,6 +198,7 @@ public class MedicosPanel extends JPanel {
                 limpiarFormulario();
             }
         });
+
     }
     
     private JPanel createFormField(String labelText, JTextField textField) {
@@ -207,5 +230,24 @@ public class MedicosPanel extends JPanel {
         txtEmail.setText("");
         txtTelefono.setText("");
         txtEspecialidad.setText("");
+    }
+
+    private void listarMedicos() {
+        limpiarFormulario();
+        //Obtener Medicos de la base de datos
+        var medicos = medicoService.listarMedicos();
+        medicos.forEach((medico) -> {
+            Object[] renglonMedico = {
+                medico.getIdMedico(),
+                medico.getNombre(),
+                medico.getApellido(),
+                medico.getEmail(),
+                medico.getTelefono(),
+                medico.getEspecialidad()
+            };
+
+            this.tableModelMedicos.addRow(renglonMedico);
+        });
+
     }
 }
