@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @Component
 public class CliniQInterfaz extends JFrame {
+    
 
     private static final long serialVersionUID = 1L;
     
@@ -56,14 +57,23 @@ public class CliniQInterfaz extends JFrame {
     private final Color COLOR_TEXT = new Color(30, 30, 30);
     
     // Paneles de contenido
+    @Autowired
     private JPanel inicioPanel;
+    @Autowired
     private PacientePanel pacientePanel;
+    @Autowired
     private CitasPanel citasPanel;
+    @Autowired
     private MedicosPanel medicosPanel;
+    @Autowired
     private FacturacionPanel facturacionPanel;
 
     @Autowired
-    public CliniQInterfaz() {
+    public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel) {
+        this.pacientePanel = pacientePanel;
+        this.citasPanel = citasPanel;
+        this.medicosPanel = medicosPanel;
+        this.facturacionPanel = facturacionPanel;
         IniciarForm();
     }
     
@@ -180,11 +190,6 @@ public class CliniQInterfaz extends JFrame {
         headerPanel.add(closePanel, BorderLayout.EAST);
         dynamicContentPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Inicializar todos los paneles
-        pacientePanel = new PacientePanel();
-        citasPanel = new CitasPanel();
-        medicosPanel = new MedicosPanel();
-        facturacionPanel = new FacturacionPanel();
         
         // Crear panel simple para la página de inicio
         inicioPanel = new JPanel(new BorderLayout());

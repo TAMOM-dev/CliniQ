@@ -3,10 +3,12 @@ package dev.cliniq.cliniq.Service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import dev.cliniq.cliniq.Model.Paciente;
 import dev.cliniq.cliniq.Repository.pacienteRepository;
 
+@Service
 public class pacienteService implements IPacienteService {
 
     //instancia de la clase de repositorio
@@ -37,7 +39,7 @@ public class pacienteService implements IPacienteService {
     }
 
     @Override
-    public void elininarPaciente(Paciente paciente) {
+    public void eliminarPaciente(Paciente paciente) {
         pacienteRepository.delete(paciente);
     }
 

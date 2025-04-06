@@ -2,13 +2,29 @@ package dev.cliniq.cliniq.View;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import dev.cliniq.cliniq.Model.Paciente;
+import dev.cliniq.cliniq.Service.IPacienteService;
+import jakarta.annotation.PostConstruct;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
+@Component
 public class PacientePanel extends JPanel {
+    @Autowired
+    private IPacienteService pacienteService;
+
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
     private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
@@ -18,6 +34,7 @@ public class PacientePanel extends JPanel {
     
     private JTextField txtBuscar;
     private JTable tablePacientes;
+    private DefaultTableModel tableModel;
     private JTextField txtIdPaciente;
     private JTextField txtNombre;
     private JTextField txtApellido;
@@ -27,8 +44,20 @@ public class PacientePanel extends JPanel {
     private JTextField txtTelefono;
     private JButton btnGuardar;
     private JButton btnLimpiar;
+    private JButton btnBuscar;
 
+
+    // Constructor sin argumentos requerido para Spring
     public PacientePanel() {
+        initComponents();
+    }
+
+    @PostConstruct
+    public void initAfterConstruct() {
+        cargarPacientes();
+    }
+    
+    private void initComponents() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BACKGROUND); // Fondo blanco
 
@@ -38,7 +67,7 @@ public class PacientePanel extends JPanel {
         JLabel lblBuscar = new JLabel("Pacientes");
         lblBuscar.setForeground(COLOR_TEXT);
         txtBuscar = new JTextField(20);
-        JButton btnBuscar = new JButton("Buscar");
+        btnBuscar = new JButton("Buscar");
         btnBuscar.setBackground(COLOR_BUTTON);
         btnBuscar.setForeground(COLOR_BACKGROUND);
         btnBuscar.setBorderPainted(false);
@@ -61,7 +90,12 @@ public class PacientePanel extends JPanel {
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 5));
         
         // Crear modelo de tabla
-        DefaultTableModel tableModel = new DefaultTableModel();
+        tableModel = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Hacer la tabla no editable
+            }
+        };
         tableModel.addColumn("ID");
         tableModel.addColumn("Nombre");
         tableModel.addColumn("Apellido");
@@ -76,6 +110,17 @@ public class PacientePanel extends JPanel {
         tablePacientes.setSelectionForeground(COLOR_TEXT);
         tablePacientes.setGridColor(new Color(240, 240, 240));
         tablePacientes.setBorder(BorderFactory.createLineBorder(COLOR_SECONDARY));
+        
+        // Agregar evento de selección de fila en la tabla
+        tablePacientes.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int filaSeleccionada = tablePacientes.getSelectedRow();
+                if (filaSeleccionada >= 0) {
+                    seleccionarPaciente(filaSeleccionada);
+                }
+            }
+        });
 
         
         JScrollPane scrollPane = new JScrollPane(tablePacientes);
@@ -177,6 +222,21 @@ public class PacientePanel extends JPanel {
                 limpiarFormulario();
             }
         });
+        
+        btnGuardar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                guardarPaciente();
+            }
+        });
+        
+        // Configurar evento para el botón buscar
+        btnBuscar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                buscarPacientes();
+            }
+        });
     }
     
     private JPanel createFormField(String labelText, JTextField textField) {
@@ -209,7 +269,160 @@ public class PacientePanel extends JPanel {
         txtDireccion.setText("");
         txtFechaNacimiento.setText("");
         txtTelefono.setText("");
+        tablePacientes.clearSelection();
     }
-
-
+    
+    /**
+     * Este método se llamará después de que Spring haya inyectado todas las dependencias
+     */
+    @Autowired
+    public void init() {
+        // Solo cargamos los datos cuando el servicio ha sido inyectado
+        if (pacienteService != null) {
+            cargarPacientes();
+        }
+    }
+    
+    /**
+     * Carga los pacientes desde la base de datos y los muestra en la tabla
+     */
+    public void cargarPacientes() {
+        // Limpiar la tabla antes de cargar los datos
+        limpiarTabla();
+        
+        try {
+            // Obtener la lista de pacientes desde el servicio
+            List<Paciente> pacientes = pacienteService.listarPacientes();
+            
+            // Agregar cada paciente al modelo de tabla
+            for (Paciente paciente : pacientes) {
+                Object[] fila = new Object[5];
+                fila[0] = paciente.getIdPaciente();
+                fila[1] = paciente.getNombre();
+                fila[2] = paciente.getApellido();
+                fila[3] = paciente.getEmail();
+                fila[4] = paciente.getTelefono();
+                tableModel.addRow(fila);
+            }
+            
+            // Mostrar mensaje de éxito o manejo según sea necesario
+            if (pacientes.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No se encontraron pacientes en la base de datos", 
+                    "Información", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar los pacientes: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Limpia todas las filas de la tabla
+     */
+    private void limpiarTabla() {
+        while (tableModel.getRowCount() > 0) {
+            tableModel.removeRow(0);
+        }
+    }
+    
+    /**
+     * Llena el formulario con los datos del paciente seleccionado
+     */
+    private void seleccionarPaciente(int filaSeleccionada) {
+        Long idPaciente = (Long) tableModel.getValueAt(filaSeleccionada, 0);
+        
+        // Buscar el paciente en la base de datos
+        Paciente paciente = pacienteService.buscarPacientePorId(idPaciente);
+        
+        if (paciente != null) {
+            // Llenar el formulario con los datos del paciente
+            txtIdPaciente.setText(paciente.getIdPaciente().toString());
+            txtNombre.setText(paciente.getNombre());
+            txtApellido.setText(paciente.getApellido());
+            txtEmail.setText(paciente.getEmail());
+            txtDireccion.setText(paciente.getDireccion());
+            
+            // Formatear la fecha si no es nula
+            if (paciente.getFechaNacimiento() != null) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                txtFechaNacimiento.setText(paciente.getFechaNacimiento().format(formatter));
+            } else {
+                txtFechaNacimiento.setText("");
+            }
+            
+            txtTelefono.setText(paciente.getTelefono());
+        }
+    }
+    
+    /**
+     * Guarda o actualiza un paciente en la base de datos
+     */
+    private void guardarPaciente() {
+        try {
+            // Crear un nuevo objeto paciente
+            Paciente paciente = new Paciente();
+            
+            // Si hay un ID, significa que estamos actualizando un paciente existente
+            if (!txtIdPaciente.getText().isEmpty()) {
+                paciente.setIdPaciente(Long.parseLong(txtIdPaciente.getText()));
+            }
+            
+            // Validar y asignar los campos del formulario
+            if (txtNombre.getText().isEmpty() || txtApellido.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Los campos Nombre y Apellido son obligatorios", 
+                    "Error de validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            paciente.setNombre(txtNombre.getText());
+            paciente.setApellido(txtApellido.getText());
+            paciente.setEmail(txtEmail.getText());
+            paciente.setDireccion(txtDireccion.getText());
+            
+            // Parsear y validar la fecha de nacimiento
+            if (!txtFechaNacimiento.getText().isEmpty()) {
+                try {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    LocalDate fechaNacimiento = LocalDate.parse(txtFechaNacimiento.getText(), formatter);
+                    paciente.setFechaNacimiento(fechaNacimiento);
+                } catch (DateTimeParseException e) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Formato de fecha incorrecto. Use yyyy-MM-dd (ej: 1990-01-31)", 
+                        "Error de validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+            
+            paciente.setTelefono(txtTelefono.getText());
+            
+            // Guardar el paciente en la base de datos
+            pacienteService.guardarPaciente(paciente);
+            
+            // Mostrar mensaje de éxito
+            JOptionPane.showMessageDialog(this, "Paciente guardado exitosamente", 
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                
+            // Recargar la tabla y limpiar el formulario
+            cargarPacientes();
+            limpiarFormulario();
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al guardar el paciente: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Busca pacientes según el criterio en el campo de búsqueda
+     */
+    private void buscarPacientes() {
+        // Por ahora simplemente recargamos todos los pacientes
+        // En una implementación futura podría filtrar por nombre, apellido, etc.
+        cargarPacientes();
+        
+        // Nota: Podrías implementar un método de búsqueda en el servicio y llamarlo aquí
+        // según el criterio ingresado en txtBuscar.getText()
+    }
 }

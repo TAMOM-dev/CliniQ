@@ -12,5 +12,5 @@ public interface IPacienteService {
     //Se agrega si no exite, se actualiza si existe (JPA)
     public void guardarPaciente(Paciente paciente);
 
-    public void elininarPaciente(Paciente paciente);
+    public void eliminarPaciente(Paciente paciente);
 }
