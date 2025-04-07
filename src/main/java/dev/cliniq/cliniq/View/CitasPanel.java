@@ -8,10 +8,17 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import dev.cliniq.cliniq.Service.citaService;
+
 
 @Component
 public class CitasPanel extends JPanel {
+    @Autowired
+    private citaService citaService;
+
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
     private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
@@ -33,7 +40,14 @@ public class CitasPanel extends JPanel {
     private JButton btnGuardar;
     private JButton btnLimpiar;
 
-    public CitasPanel() {
+    @Autowired
+    public CitasPanel(citaService citaServicio) {
+        this.citaService = citaServicio;
+        initComponents();
+        listarCitas();
+    }
+    
+    private void initComponents() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BACKGROUND); // Fondo blanco
 
@@ -255,5 +269,24 @@ public class CitasPanel extends JPanel {
         txtConsultorio.setText("");
         radioBtnConfirmado.setSelected(false);
         radioBtnPendiente.setSelected(false);
+    }
+
+    private void listarCitas() {
+        limpiarFormulario();
+        //Obtener Medicos de la base de datos
+        var citas = citaService.listarCitas();
+        citas.forEach((cita) -> {
+            Object[] renglonCita = {
+                cita.getIdCita(),
+                cita.getPaciente().getNombre(),
+                cita.getMedico().getNombre(),
+                cita.getFechaHora(),
+                cita.getConsultorio(),
+                cita.getEstado()
+            };
+
+            this.tableModelCitas.addRow(renglonCita);
+        });
+
     }
 }

@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import dev.cliniq.cliniq.Service.pacienteService;
@@ -20,7 +21,6 @@ import dev.cliniq.cliniq.Service.pacienteService;
 
 @Component
 public class PacientePanel extends JPanel {
-    @Autowired
     private pacienteService pacienteService;
 
     // Colores de la aplicación
@@ -46,10 +46,29 @@ public class PacientePanel extends JPanel {
 
 
     @Autowired
-    public PacientePanel(pacienteService pacienteServicio) {
-        this.pacienteService = pacienteServicio;
+    public PacientePanel(pacienteService pacienteService) {
+        this.pacienteService = pacienteService;
         initComponents();
-        btnGuardar.addActionListener(e -> agregarPaciente());
+        btnGuardar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String idTexto = txtIdPaciente.getText().trim();
+                if (idTexto.isEmpty()) {
+                    // Lógica para agregar un nuevo paciente
+                    agregarPaciente();
+                } else {
+                    // Lógica para actualizar un paciente existente
+                    actualizarPaciente();
+                }
+            }
+        });
+        tablePacientes.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                cargarPacienteSeleccionado();
+            }
+        });
 
         // btnGuardar.addActionListener(new ActionListener() {
         //     @Override
@@ -93,7 +112,7 @@ public class PacientePanel extends JPanel {
         
         // Crear modelo de tabla
         this.tableModel = new DefaultTableModel(0, 7);
-        String[] columnas = {"ID", "Nombre", "Apellido", "Email", "Teléfono", "Direccion", "Fecha Nacimiento"};
+        String[] columnas = {"ID", "Nombre", "Apellido", "Email", "Direccion", "Fecha Nacimiento", "Teléfono"};
         tableModel.setColumnIdentifiers(columnas);
 
         //Instanciar la tabla
@@ -138,6 +157,7 @@ public class PacientePanel extends JPanel {
         
         // Campos de formulario
         JPanel idPanel = createFormField("ID Paciente", txtIdPaciente = new JTextField());
+        txtIdPaciente.setEditable(false);
         JPanel nombrePanel = createFormField("Nombre", txtNombre = new JTextField());
         JPanel apellidoPanel = createFormField("Apellido", txtApellido = new JTextField());
         JPanel emailPanel = createFormField("Email", txtEmail = new JTextField());
@@ -287,9 +307,9 @@ public class PacientePanel extends JPanel {
                 paciente.getNombre(),
                 paciente.getApellido(),
                 paciente.getEmail(),
-                paciente.getTelefono(),
                 paciente.getDireccion(),
-                paciente.getFechaNacimiento()
+                paciente.getFechaNacimiento(),
+                paciente.getTelefono()
             };
 
             this.tableModel.addRow(renglonPaciente);
@@ -328,34 +348,50 @@ public class PacientePanel extends JPanel {
     }
     
     private void agregarPaciente() {
-        if(txtNombre.getText().equals("")) {
-            mostrarMensaje("Debe completar todos los campos");
+        System.out.println("agregarPaciente method called");
+        if (txtNombre.getText().trim().isEmpty()) {
+            mostrarMensaje("Debe completar el nombre del paciente");
             txtNombre.requestFocusInWindow();
             return;
         }
 
-        var nombrePaciente = txtNombre.getText();
-        var apellidoPaciente = txtApellido.getText();
-        var emailPaciente = txtEmail.getText();
-        var direccionPaciente = txtDireccion.getText();
-        var fechaNacimientoPaciente = txtFechaNacimiento.getText();
-        var telefonoPaciente = txtTelefono.getText();
-        //Crear nuevo paciente
+
+        // Obtener datos de los campos del formulario
+        var nombrePaciente = txtNombre.getText().trim();
+        var apellidoPaciente = txtApellido.getText().trim();
+        var emailPaciente = txtEmail.getText().trim();
+        var direccionPaciente = txtDireccion.getText().trim();
+        var fechaNacimientoPaciente = txtFechaNacimiento.getText().trim();
+        var telefonoPaciente = txtTelefono.getText().trim();
+
+        // Crear una nueva instancia de Paciente
         var paciente = new Paciente();
         paciente.setNombre(nombrePaciente);
         paciente.setApellido(apellidoPaciente);
         paciente.setEmail(emailPaciente);
         paciente.setDireccion(direccionPaciente);
-        paciente.setFechaNacimiento(fechaNacimientoPaciente);
         paciente.setTelefono(telefonoPaciente);
 
-        //Guardar nuevo paciente en la base de datos
+        // Si se ingresó una fecha, convertirla de String a LocalDate
+        if (!fechaNacimientoPaciente.isEmpty()) {
+            try {
+            // Suponiendo que el formato es "yyyy-MM-dd"
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                var fechaNacimiento = LocalDate.parse(fechaNacimientoPaciente, formatter);
+                paciente.setFechaNacimiento(fechaNacimiento);
+            } catch (Exception e) {
+                mostrarMensaje("Fecha de nacimiento inválida. Utilice el formato yyyy-MM-dd");
+                txtFechaNacimiento.requestFocusInWindow();
+                return;
+            }
+        }
+
+        // Guardar el paciente usando el servicio de Spring Boot
         pacienteService.guardarPaciente(paciente);
+        mostrarMensaje("Paciente agregado con éxito");
 
-        //Actualizar tabla
+        // Actualizar la tabla y limpiar el formulario
         listarPacientes();
-
-        //Limpiar formulario
         limpiarFormulario();
     }
 
@@ -363,4 +399,74 @@ public class PacientePanel extends JPanel {
         JOptionPane.showMessageDialog(this, mensaje);
     }
   
+    private void cargarPacienteSeleccionado() {
+        //Los indices inician en 0
+        var renglon = tablePacientes.getSelectedRow();
+        if (renglon != -1) { //Rregresa -1 si no hay seleccionado nada
+            String idPaciente = tablePacientes.getModel().getValueAt(renglon, 0).toString();
+            txtIdPaciente.setText(idPaciente);
+            String nombrePaciente = tablePacientes.getModel().getValueAt(renglon, 1).toString();
+            txtNombre.setText(nombrePaciente);
+            String apellidoPaciente = tablePacientes.getModel().getValueAt(renglon, 2).toString();
+            txtApellido.setText(apellidoPaciente);
+            String emailPaciente = tablePacientes.getModel().getValueAt(renglon, 3).toString();
+            txtEmail.setText(emailPaciente);
+            String direccionPaciente = tablePacientes.getModel().getValueAt(renglon, 4).toString();
+            txtDireccion.setText(direccionPaciente);
+            String fechaNacimientoPaciente = tablePacientes.getModel().getValueAt(renglon, 5).toString();
+            txtFechaNacimiento.setText(fechaNacimientoPaciente);
+            String telefonoPaciente = tablePacientes.getModel().getValueAt(renglon, 6).toString();
+            txtTelefono.setText(telefonoPaciente);
+        }
+    }
+
+    private void actualizarPaciente() {
+        if (this.txtIdPaciente.getText().equals("")) {
+            mostrarMensaje("Debe seleccionar un paciente");
+        }
+        else{
+            //Verificamos que el nombre del paciente no sea nulo
+            if (txtNombre.getText().equals("")) {
+                mostrarMensaje("Debe completar el nombre del paciente...");
+                txtNombre.requestFocusInWindow();
+                return;
+            }
+            //Llenamos el objeto de libro a actualizar
+            long idPaciente = Long.parseLong(txtIdPaciente.getText());
+            var nombrePaciente = txtNombre.getText();
+            var apellidoPaciente = txtApellido.getText();
+            var emailPaciente = txtEmail.getText();
+            var direccionPaciente = txtDireccion.getText();
+            var telefonoPaciente = txtTelefono.getText();
+            var fechaNacimientoPaciente = txtFechaNacimiento.getText();
+            var paciente = new Paciente();
+            paciente.setIdPaciente(idPaciente);
+            paciente.setNombre(nombrePaciente);
+            paciente.setApellido(apellidoPaciente);
+            paciente.setEmail(emailPaciente);
+            paciente.setDireccion(direccionPaciente);
+            paciente.setTelefono(telefonoPaciente);
+            
+            // Si se ingresó una fecha, convertirla de String a LocalDate
+            if (!fechaNacimientoPaciente.isEmpty()) {
+             try {
+                // Suponiendo que el formato es "yyyy-MM-dd"
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    var fechaNacimiento = LocalDate.parse(fechaNacimientoPaciente, formatter);
+                    paciente.setFechaNacimiento(fechaNacimiento);
+                } catch (Exception e) {
+                    mostrarMensaje("Fecha de nacimiento inválida. Utilice el formato yyyy-MM-dd");
+                    txtFechaNacimiento.requestFocusInWindow();
+                    return;
+                }
+            }
+
+            pacienteService.guardarPaciente(paciente);
+            mostrarMensaje("Paciente actualizado con éxito");
+            limpiarFormulario();
+            listarPacientes();
+
+        }
+    }
 }
+

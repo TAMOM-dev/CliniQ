@@ -57,7 +57,7 @@ public class CliniQInterfaz extends JFrame {
     private final Color COLOR_TEXT = new Color(30, 30, 30);
     
     // Paneles de contenido
-    @Autowired
+    // @Autowired
     private JPanel inicioPanel;
     @Autowired
     private PacientePanel pacientePanel;

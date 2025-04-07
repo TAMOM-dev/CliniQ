@@ -8,10 +8,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import dev.cliniq.cliniq.Service.FacturaService;
+
 
 @Component
 public class FacturacionPanel extends JPanel {
+    @Autowired
+    private FacturaService facturaService;
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
     private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
@@ -31,7 +36,13 @@ public class FacturacionPanel extends JPanel {
     private JButton btnGuardar;
     private JButton btnLimpiar;
 
-    public FacturacionPanel() {
+    @Autowired
+    public FacturacionPanel(FacturaService facturaService) {
+        this.facturaService = facturaService;
+        initComponents();
+    }
+
+    private void initComponents() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BACKGROUND); // Fondo blanco
 
