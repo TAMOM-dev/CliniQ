@@ -7,10 +7,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import dev.cliniq.cliniq.Model.Medico;
 import dev.cliniq.cliniq.Service.medicoService;
 
 @Component
@@ -41,7 +43,26 @@ public class MedicosPanel extends JPanel {
     public MedicosPanel(medicoService medicoServicio) {
         this.medicoService = medicoServicio;
         initComponents();
-        listarMedicos();
+        btnGuardar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String idTexto = txtIdMedico.getText().trim();
+                if (idTexto.isEmpty()) {
+                    // Lógica para agregar un nuevo Medico
+                    agregarMedico();
+                } else {
+                    // Lógica para actualizar un Medico existente
+                    actualizarMedico();
+                }
+            }
+        });
+        tableMedicos.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                cargarMedicoSeleccionado();
+            }
+        });
     }
 
     private void initComponents() {
@@ -60,6 +81,36 @@ public class MedicosPanel extends JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setFocusPainted(false);
         btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnBuscar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String idTexto = txtBuscar.getText().trim();
+                if (idTexto.isEmpty()) {
+                    mostrarMensaje("Ingrese el ID del médico a buscar.");
+                    return;
+                }
+                try {
+                    Long idMedico = Long.parseLong(idTexto);
+                    // Utiliza el servicio para buscar el médico por su ID
+                    Medico medico = medicoService.buscarMedicoPorId(idMedico);
+                    if (medico != null) {
+                        // Si se encuentra, llena los campos del formulario con los datos del médico
+                        txtIdMedico.setText(String.valueOf(medico.getIdMedico()));
+                        txtNombre.setText(medico.getNombre());
+                        txtApellido.setText(medico.getApellido());
+                        txtEmail.setText(medico.getEmail());
+                        txtTelefono.setText(medico.getTelefono());
+                        txtEspecialidad.setText(medico.getEspecialidad());
+                    } else {
+                        mostrarMensaje("No se encontró un médico con el ID proporcionado.");
+                        limpiarFormulario();
+                    }
+                } catch (NumberFormatException ex) {
+                    mostrarMensaje("El ID debe ser un número válido.");
+                }
+            }
+        });
         
         searchPanel.add(lblBuscar);
         searchPanel.add(txtBuscar);
@@ -102,9 +153,64 @@ public class MedicosPanel extends JPanel {
         tableMedicos.setGridColor(new Color(240, 240, 240));
         tableMedicos.setBorder(BorderFactory.createLineBorder(COLOR_SECONDARY));
         
+        // Agregar evento de selección de fila en la tabla
+        tableMedicos.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int filaSeleccionada = tableMedicos.getSelectedRow();
+                if (filaSeleccionada >= 0) {
+                    seleccionarMedico(filaSeleccionada);
+                }
+            }
+        });
+
         JScrollPane scrollPane = new JScrollPane(tableMedicos);
         scrollPane.setBorder(BorderFactory.createLineBorder(COLOR_PRIMARY, 1));
         tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+        //popupMenu
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Eliminar");
+        popupMenu.add(deleteItem);
+
+        tableMedicos.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    int row = tableMedicos.rowAtPoint(e.getPoint());
+                    tableMedicos.setRowSelectionInterval(row, row);
+                    popupMenu.show(tableMedicos, e.getX(), e.getY());                 
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                mousePressed(e);
+            }
+        });
+
+        deleteItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = tableMedicos.getSelectedRow();
+                if (selectedRow >= 0) {
+                    int confirm = JOptionPane.showConfirmDialog(null, "¿Está seguro de que desea eliminar este Medico?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        Long idMedico = (Long) tableModelMedicos.getValueAt(selectedRow, 0);
+                        Medico Medico = medicoService.buscarMedicoPorId(idMedico);
+                        if (Medico != null) {
+                            medicoService.eliminarMedico(Medico);
+                            tableModelMedicos.removeRow(selectedRow);
+                            JOptionPane.showMessageDialog(null, "Medico eliminado con éxito.");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "No se encontró el Medico.");
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Seleccione un Medico para eliminar.");
+                }
+            }
+                });
         
         // Panel de formulario (lado derecho)
         JPanel formPanel = new JPanel();
@@ -120,6 +226,7 @@ public class MedicosPanel extends JPanel {
         
         // Campos de formulario
         JPanel idMedicoPanel = createFormField("ID Médico", txtIdMedico = new JTextField());
+        txtIdMedico.setEditable(false);
         JPanel nombrePanel = createFormField("Nombre", txtNombre = new JTextField());
         JPanel apellidoPanel = createFormField("Apellido", txtApellido = new JTextField());
         JPanel emailPanel = createFormField("Email", txtEmail = new JTextField());
@@ -199,6 +306,7 @@ public class MedicosPanel extends JPanel {
             }
         });
 
+        listarMedicos();
     }
     
     private JPanel createFormField(String labelText, JTextField textField) {
@@ -221,6 +329,23 @@ public class MedicosPanel extends JPanel {
         panel.add(textField);
         
         return panel;
+    }
+
+    private void seleccionarMedico(int filaSeleccionada) {
+        Long idMedico = (Long) tableModelMedicos.getValueAt(filaSeleccionada, 0);
+        
+        // Buscar el Medico en la base de datos
+        Medico medico = medicoService.buscarMedicoPorId(idMedico);
+        
+        if (medico != null) {
+            // Llenar el formulario con los datos del Medico
+            txtIdMedico.setText(medico.getIdMedico().toString());
+            txtNombre.setText(medico.getNombre());
+            txtApellido.setText(medico.getApellido());
+            txtEmail.setText(medico.getEmail());
+            txtTelefono.setText(medico.getTelefono());
+            txtEspecialidad.setText(medico.getEspecialidad());
+        }
     }
     
     private void limpiarFormulario() {
@@ -249,5 +374,96 @@ public class MedicosPanel extends JPanel {
             this.tableModelMedicos.addRow(renglonMedico);
         });
 
+    }
+
+    private void agregarMedico() {
+        if (txtNombre.getText().trim().isEmpty()) {
+            mostrarMensaje("Debe completar el nombre del Medico");
+            txtNombre.requestFocusInWindow();
+            return;
+        }
+
+
+        // Obtener datos de los campos del formulario
+        var nombreMedico = txtNombre.getText().trim();
+        var apellidoMedico = txtApellido.getText().trim();
+        var emailMedico = txtEmail.getText().trim();
+        var telefonoMedico = txtTelefono.getText().trim();
+        var especialidadMedico = txtEspecialidad.getText().trim();
+
+        // Crear una nueva instancia de Medico
+        var medico = new Medico();
+        medico.setNombre(nombreMedico);
+        medico.setApellido(apellidoMedico);
+        medico.setEmail(emailMedico);
+        medico.setTelefono(telefonoMedico);
+        medico.setEspecialidad(especialidadMedico);
+
+
+        // Guardar el Medico usando el servicio de Spring Boot
+        medicoService.guardarMedico(medico);
+        mostrarMensaje("Medico agregado con éxito");
+
+        // Actualizar la tabla y limpiar el formulario
+        listarMedicos();
+        limpiarFormulario();
+    }
+
+    private void mostrarMensaje(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje);
+    }
+
+    private void actualizarMedico() {
+        if (this.txtIdMedico.getText().equals("")) {
+            mostrarMensaje("Debe seleccionar un Medico");
+        }
+        else{
+            //Verificamos que el nombre del Medico no sea nulo
+            if (txtNombre.getText().equals("")) {
+                mostrarMensaje("Debe completar el nombre del Medico...");
+                txtNombre.requestFocusInWindow();
+                return;
+            }
+            //Llenamos el objeto de libro a actualizar
+            long idMedico = Long.parseLong(txtIdMedico.getText());
+            var nombreMedico = txtNombre.getText();
+            var apellidoMedico = txtApellido.getText();
+            var emailMedico = txtEmail.getText();
+            var telefonoMedico = txtTelefono.getText();
+            var especialidadMedico = txtEspecialidad.getText();
+            var Medico = new Medico();
+            Medico.setIdMedico(idMedico);
+            Medico.setNombre(nombreMedico);
+            Medico.setApellido(apellidoMedico);
+            Medico.setEmail(emailMedico);
+            Medico.setTelefono(telefonoMedico);
+            Medico.setEspecialidad(especialidadMedico);
+            
+
+            medicoService.guardarMedico(Medico);
+            mostrarMensaje("Medico actualizado con éxito");
+            limpiarFormulario();
+            listarMedicos();
+
+        }
+    }
+    
+    private void cargarMedicoSeleccionado() {
+        //Los indices inician en 0
+        var renglon = tableMedicos.getSelectedRow();
+        if (renglon != -1) { //Rregresa -1 si no hay seleccionado nada
+            String idMedico = tableMedicos.getModel().getValueAt(renglon, 0).toString();
+            txtIdMedico.setText(idMedico);
+            String nombreMedico = tableMedicos.getModel().getValueAt(renglon, 1).toString();
+            txtNombre.setText(nombreMedico);
+            String apellidoMedico = tableMedicos.getModel().getValueAt(renglon, 2).toString();
+            txtApellido.setText(apellidoMedico);
+            String emailMedico = tableMedicos.getModel().getValueAt(renglon, 3).toString();
+            txtEmail.setText(emailMedico);
+            String telefonoMedico = tableMedicos.getModel().getValueAt(renglon, 4).toString();
+            txtTelefono.setText(telefonoMedico);
+            String especialidadMedico = tableMedicos.getModel().getValueAt(renglon, 5).toString();
+            txtEspecialidad.setText(especialidadMedico);
+        }
     }
 }

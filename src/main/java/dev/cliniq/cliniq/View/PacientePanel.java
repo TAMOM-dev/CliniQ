@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import dev.cliniq.cliniq.Model.Paciente;
+import dev.cliniq.cliniq.Model.Paciente;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -94,6 +95,35 @@ public class PacientePanel extends JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setFocusPainted(false);
         btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnBuscar.addActionListener(new ActionListener() {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        String idTexto = txtBuscar.getText().trim();
+        if (idTexto.isEmpty()) {
+            mostrarMensaje("Ingrese el ID del médico a buscar.");
+            return;
+        }
+        try {
+            Long idPaciente = Long.parseLong(idTexto);
+            // Utiliza el servicio para buscar el médico por su ID
+            Paciente Paciente = pacienteService.buscarPacientePorId(idPaciente);
+            if (Paciente != null) {
+                // Si se encuentra, llena los campos del formulario con los datos del médico
+                txtIdPaciente.setText(String.valueOf(Paciente.getIdPaciente()));
+                txtNombre.setText(Paciente.getNombre());
+                txtApellido.setText(Paciente.getApellido());
+                txtEmail.setText(Paciente.getEmail());
+                txtTelefono.setText(Paciente.getTelefono());
+            } else {
+                mostrarMensaje("No se encontró un paciento con el ID proporcionado.");
+                limpiarFormulario();
+            }
+        } catch (NumberFormatException ex) {
+            mostrarMensaje("El ID debe ser un número válido.");
+        }
+    }
+});
         
         searchPanel.add(lblBuscar);
         searchPanel.add(txtBuscar);
@@ -142,6 +172,50 @@ public class PacientePanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(tablePacientes);
         scrollPane.setBorder(BorderFactory.createLineBorder(COLOR_PRIMARY, 1));
         tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+        //popupMenu
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Eliminar");
+        popupMenu.add(deleteItem);
+
+        tablePacientes.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    int row = tablePacientes.rowAtPoint(e.getPoint());
+                    tablePacientes.setRowSelectionInterval(row, row);
+                    popupMenu.show(tablePacientes, e.getX(), e.getY());                 
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                mousePressed(e);
+            }
+        });
+
+        deleteItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = tablePacientes.getSelectedRow();
+                if (selectedRow >= 0) {
+                    int confirm = JOptionPane.showConfirmDialog(null, "¿Está seguro de que desea eliminar este paciente?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        Long idPaciente = (Long) tableModel.getValueAt(selectedRow, 0);
+                        Paciente paciente = pacienteService.buscarPacientePorId(idPaciente);
+                        if (paciente != null) {
+                            pacienteService.eliminarPaciente(paciente);
+                            tableModel.removeRow(selectedRow);
+                            JOptionPane.showMessageDialog(null, "Paciente eliminado con éxito.");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "No se encontró el paciente.");
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Seleccione un paciente para eliminar.");
+                }
+            }
+                });
         
         // Panel de formulario (lado derecho)
         JPanel formPanel = new JPanel();
@@ -299,7 +373,7 @@ public class PacientePanel extends JPanel {
 
         // Limpiar el formulario
         limpiarFormulario();
-        //Obtener Medicos de la base de datos
+        //Obtener Pacientes de la base de datos
         var pacientes = pacienteService.listarPacientes();
         pacientes.forEach((paciente) -> {
             Object[] renglonPaciente = {
@@ -348,7 +422,7 @@ public class PacientePanel extends JPanel {
     }
     
     private void agregarPaciente() {
-        System.out.println("agregarPaciente method called");
+        // System.out.println("agregarPaciente method called");
         if (txtNombre.getText().trim().isEmpty()) {
             mostrarMensaje("Debe completar el nombre del paciente");
             txtNombre.requestFocusInWindow();
