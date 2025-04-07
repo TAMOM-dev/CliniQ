@@ -319,7 +319,7 @@ public class CitasPanel extends JPanel {
                 return;
             }
 
-            String estado;
+            String estado = "";
 
             if (estado.isEmpty()) {
                 mostrarMensaje("Seleccione un estado para la cita.");

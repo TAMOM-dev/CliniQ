@@ -23,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -72,12 +73,14 @@ public class CliniQInterfaz extends JFrame {
     private ConsultorioPanel consultorioPanel;
 
     @Autowired
-    public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel, ConsultorioPanel consultorioPanel) {
+    public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel, ConsultorioPanel consultorioPanel, @Qualifier("inicioPanel") JPanel inicioPanel) {
         this.pacientePanel = pacientePanel;
         this.citasPanel = citasPanel;
         this.medicosPanel = medicosPanel;
         this.facturacionPanel = facturacionPanel;
         this.consultorioPanel = consultorioPanel;
+        this.inicioPanel = inicioPanel;
+        
         IniciarForm();
     }
     
@@ -207,8 +210,6 @@ public class CliniQInterfaz extends JFrame {
 
         
         // Crear panel simple para la página de inicio
-        inicioPanel = new JPanel(new BorderLayout());
-        inicioPanel.setBackground(COLOR_BACKGROUND);
         
         // Contenido de bienvenida en el panel de inicio centrado
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
