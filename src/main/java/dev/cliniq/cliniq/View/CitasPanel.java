@@ -7,11 +7,38 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import dev.cliniq.cliniq.Model.Cita;
+import dev.cliniq.cliniq.Model.Consultorio;
+import dev.cliniq.cliniq.Model.Medico;
+import dev.cliniq.cliniq.Model.Paciente;
+import dev.cliniq.cliniq.Service.citaService;
+import dev.cliniq.cliniq.Service.pacienteService;
+import dev.cliniq.cliniq.Service.medicoService;
+import dev.cliniq.cliniq.Service.consultorioService;
+
+
 
 @Component
 public class CitasPanel extends JPanel {
+    @Autowired
+    private citaService citaService;
+
+    @Autowired
+    private pacienteService pacienteService;
+
+    @Autowired
+    private medicoService medicoService;
+
+    @Autowired
+    private consultorioService consultorioService;  
+
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
     private final Color COLOR_SECONDARY = new Color(220, 249, 255); // Cyan muy claro
@@ -26,14 +53,21 @@ public class CitasPanel extends JPanel {
     private JTextField txtPaciente;
     private JTextField txtMedico;
     private JTextField txtFecha;
-    private JTextField txtHora;
     private JTextField txtConsultorio;
     private JRadioButton radioBtnConfirmado;
     private JRadioButton radioBtnPendiente;
     private JButton btnGuardar;
     private JButton btnLimpiar;
 
-    public CitasPanel() {
+    @Autowired
+    public CitasPanel(citaService citaService) {
+        this.citaService = citaService;
+        initComponents();
+        btnGuardar.addActionListener(e -> agregarCita()); 
+        listarCitas();
+    }
+
+    private void initComponents() {
         setLayout(new BorderLayout());
         setBackground(COLOR_BACKGROUND); // Fondo blanco
 
@@ -67,7 +101,7 @@ public class CitasPanel extends JPanel {
         
         // Crear modelo de tabla
         this.tableModelCitas = new DefaultTableModel(0, 6);
-        String[] columnas = {"ID", "Paciente", "Médico", "Fecha/Hora", "Consultorio", "Estado"};
+        String[] columnas = {"ID", "ID Paciente", "ID Médico", "Fecha/Hora", "ID Consultorio", "Estado"};
         tableModelCitas.setColumnIdentifiers(columnas);
 
         //Inicializar la tabla
@@ -107,11 +141,10 @@ public class CitasPanel extends JPanel {
         
         // Campos de formulario
         JPanel idCitaPanel = createFormField("ID Citas", txtIdCita = new JTextField());
-        JPanel pacientePanel = createFormField("Paciente", txtPaciente = new JTextField());
-        JPanel medicoPanel = createFormField("Médico", txtMedico = new JTextField());
+        JPanel pacientePanel = createFormField("ID Paciente", txtPaciente = new JTextField());
+        JPanel medicoPanel = createFormField("ID Médico", txtMedico = new JTextField());
         JPanel fechaPanel = createFormField("Fecha", txtFecha = new JTextField());
-        JPanel horaPanel = createFormField("Hora", txtHora = new JTextField());
-        JPanel consultorioPanel = createFormField("Consultorio", txtConsultorio = new JTextField());
+        JPanel consultorioPanel = createFormField("ID Consultorio", txtConsultorio = new JTextField());
         
         // Panel de estado (radio buttons)
         JPanel estadoPanel = new JPanel();
@@ -200,7 +233,6 @@ public class CitasPanel extends JPanel {
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         formPanel.add(fechaPanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        formPanel.add(horaPanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         formPanel.add(consultorioPanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -222,6 +254,7 @@ public class CitasPanel extends JPanel {
                 limpiarFormulario();
             }
         });
+
     }
     
     private JPanel createFormField(String labelText, JTextField textField) {
@@ -251,9 +284,117 @@ public class CitasPanel extends JPanel {
         txtPaciente.setText("");
         txtMedico.setText("");
         txtFecha.setText("");
-        txtHora.setText("");
         txtConsultorio.setText("");
         radioBtnConfirmado.setSelected(false);
         radioBtnPendiente.setSelected(false);
+    }
+
+    private void agregarCita() {
+        //Leer los datos del formulario
+        if(txtPaciente.getText().isBlank() || txtMedico.getText().isBlank()) {
+            mostrarMensaje("El paciente y medico es obligatorio");  
+            txtPaciente.requestFocusInWindow();
+            return;
+        }
+
+        try {
+            var idPaciente = Long.parseLong(txtPaciente.getText());
+            var idMedico = Long.parseLong(txtMedico.getText());
+            var idConsultorio = Long.parseLong(txtConsultorio.getText());
+
+            Paciente paciente = pacienteService.buscarPacientePorId(idPaciente);
+            Medico medico = medicoService.buscarMedicoPorId(idMedico);
+            Consultorio consultorio = consultorioService.buscarConsultorioPorId(idConsultorio);
+
+            if (paciente == null) {
+                mostrarMensaje("El paciente no existe");
+                return;
+            }
+            if (medico == null) {
+                mostrarMensaje("El médico no existe");
+                return;
+            }
+            if (consultorio == null) {
+                mostrarMensaje("El consultorio no existe");
+                return;
+            }
+
+            String estado;
+
+            if (estado.isEmpty()) {
+                mostrarMensaje("Seleccione un estado para la cita.");
+                return;
+            }
+
+            if(radioBtnConfirmado.isSelected()) {
+                estado = radioBtnConfirmado.getText();
+            } else if (radioBtnPendiente.isSelected()) {
+                estado = radioBtnPendiente.getText();
+            } else {
+                estado = "";
+            }
+
+            //Validar formato de fecha hora 
+            if(!validarFormatoFechaHora(txtFecha.getText())) {
+                mostrarMensaje("Formato de fecha inválido. Use dd/MM/yyyy");
+                txtFecha.requestFocusInWindow();
+                return;
+            }
+
+            DateTimeFormatter fechaFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate fechaHora = LocalDate.parse(txtFecha.getText(), fechaFormatter);
+
+            //Guardar Cita
+            var cita = new Cita();
+            cita.setFechaHora(fechaHora);
+            cita.setEstado(estado);
+            cita.setPaciente(pacienteService.buscarPacientePorId(idPaciente));
+            cita.setMedico(medicoService.buscarMedicoPorId(idMedico));
+            cita.setConsultorio(consultorioService.buscarConsultorioPorId(idConsultorio));
+            this.citaService.guardarCita(cita);
+
+            mostrarMensaje("Cita guardada con éxito");
+            limpiarFormulario();
+            listarCitas();
+        } catch (NumberFormatException e) {
+            mostrarMensaje("Los ID's deben ser números validos");
+        } catch (Exception e) { //Captura cualquier excepción
+            e.printStackTrace();
+            mostrarMensaje("Error: " + e.getMessage());
+        }
+
+    }
+
+    private void mostrarMensaje(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje);
+    }
+
+    private boolean validarFormatoFechaHora(String fecha) {
+        try {
+        // Ejemplo: Validar formato "dd/MM/yyyy" y "HH:mm"
+        DateTimeFormatter fechaFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate.parse(fecha, fechaFormatter);      
+        return true;
+    } catch (DateTimeParseException e) {
+        return false;
+    }
+    }
+
+    private void listarCitas() {
+        tableModelCitas.setRowCount(0);
+
+        var citas = citaService.listarCitas();
+        citas.forEach((cita) -> {
+            Object[] renglonCita = {
+                cita.getIdCita(),
+                cita.getPaciente().getIdPaciente(),
+                cita.getMedico().getIdMedico(),
+                cita.getFechaHora(),
+                cita.getConsultorio().getIdConsultorio(),
+                cita.getEstado()
+            };
+
+            this.tableModelCitas.addRow(renglonCita);
+        });
     }
 }

@@ -7,6 +7,8 @@ import dev.cliniq.cliniq.Model.Medico;
 public interface IMedicoService {
     public List<Medico> listarMedicos();
 
+    public boolean existeMedico(Long idMedico);
+
     public Medico buscarMedicoPorId(Long idMedico);
 
     public void guardarMedico(Medico medico);

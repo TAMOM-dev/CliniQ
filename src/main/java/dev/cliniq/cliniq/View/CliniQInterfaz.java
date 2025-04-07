@@ -22,8 +22,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Clase que representa la interfaz gráfica de la aplicación CliniQ.
@@ -50,6 +50,7 @@ public class CliniQInterfaz extends JFrame {
     private JButton citasButton;
     private JButton medicosButton;
     private JButton facturacionButton;
+    private JButton consultorioButton;
     
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
@@ -67,13 +68,16 @@ public class CliniQInterfaz extends JFrame {
     private MedicosPanel medicosPanel;
     @Autowired
     private FacturacionPanel facturacionPanel;
+    @Autowired
+    private ConsultorioPanel consultorioPanel;
 
     @Autowired
-    public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel) {
+    public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel, ConsultorioPanel consultorioPanel) {
         this.pacientePanel = pacientePanel;
         this.citasPanel = citasPanel;
         this.medicosPanel = medicosPanel;
         this.facturacionPanel = facturacionPanel;
+        this.consultorioPanel = consultorioPanel;
         IniciarForm();
     }
     
@@ -101,6 +105,7 @@ public class CliniQInterfaz extends JFrame {
         citasButton = createMenuButton("Citas", "icons/cita.png");
         medicosButton = createMenuButton("Médicos", "icons/medico.png");
         facturacionButton = createMenuButton("Facturación", "icons/factura.png");
+        consultorioButton = createMenuButton("Consultorios", "icons/consultorio.png");
 
         // Configurar los event listeners para la navegación
         inicioButton.addActionListener(new ActionListener() {
@@ -142,6 +147,14 @@ public class CliniQInterfaz extends JFrame {
                 mostrarPanel("Facturación");
             }
         });
+        
+        consultorioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(consultorioButton);
+                mostrarPanel("Consultorios");
+            }
+        });
 
         menuPanel.add(Box.createRigidArea(new Dimension(0, 30))); // Espacio superior
         menuPanel.add(inicioButton);
@@ -153,6 +166,8 @@ public class CliniQInterfaz extends JFrame {
         menuPanel.add(medicosButton);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(facturacionButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        menuPanel.add(consultorioButton);
         menuPanel.add(Box.createVerticalGlue()); // Espacio inferior
 
         // Panel central para el contenido dinámico
@@ -278,6 +293,9 @@ public class CliniQInterfaz extends JFrame {
                 break;
             case "Facturación":
                 dynamicContentPanel.add(facturacionPanel, BorderLayout.CENTER);
+                break;
+            case "Consultorios":
+                dynamicContentPanel.add(consultorioPanel, BorderLayout.CENTER);
                 break;
         }
         

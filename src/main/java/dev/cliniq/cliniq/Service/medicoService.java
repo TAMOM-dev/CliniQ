@@ -33,5 +33,10 @@ public class medicoService implements IMedicoService {
     public void eliminarMedico(Medico medico) {
         medicoRepository.delete(medico);
     }
+
+    @Override
+    public boolean existeMedico(Long idMedico) {
+        return medicoRepository.existsById(idMedico);
+    }
     
 }

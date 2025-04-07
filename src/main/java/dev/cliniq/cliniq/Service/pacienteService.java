@@ -43,4 +43,9 @@ public class pacienteService implements IPacienteService {
         pacienteRepository.delete(paciente);
     }
 
+    @Override
+    public boolean existePaciente(Long idPaciente) {
+        return pacienteRepository.existsById(idPaciente);
+    }
+
 }
