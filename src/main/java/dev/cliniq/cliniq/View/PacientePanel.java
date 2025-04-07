@@ -2,11 +2,11 @@ package dev.cliniq.cliniq.View;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import dev.cliniq.cliniq.Model.Paciente;
 import dev.cliniq.cliniq.Model.Paciente;
 
 import java.awt.*;
@@ -97,33 +97,24 @@ public class PacientePanel extends JPanel {
         btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btnBuscar.addActionListener(new ActionListener() {
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        String idTexto = txtBuscar.getText().trim();
-        if (idTexto.isEmpty()) {
-            mostrarMensaje("Ingrese el ID del médico a buscar.");
-            return;
-        }
-        try {
-            Long idPaciente = Long.parseLong(idTexto);
-            // Utiliza el servicio para buscar el médico por su ID
-            Paciente Paciente = pacienteService.buscarPacientePorId(idPaciente);
-            if (Paciente != null) {
-                // Si se encuentra, llena los campos del formulario con los datos del médico
-                txtIdPaciente.setText(String.valueOf(Paciente.getIdPaciente()));
-                txtNombre.setText(Paciente.getNombre());
-                txtApellido.setText(Paciente.getApellido());
-                txtEmail.setText(Paciente.getEmail());
-                txtTelefono.setText(Paciente.getTelefono());
-            } else {
-                mostrarMensaje("No se encontró un paciento con el ID proporcionado.");
-                limpiarFormulario();
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String searchText = txtBuscar.getText().trim();
+                
+                // Creamos el sorter para la tabla con el modelo correspondiente
+                TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
+                tablePacientes.setRowSorter(sorter);
+                
+                // Si el campo de búsqueda está vacío, se remueve el filtro
+                if (searchText.length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    // Se aplica un filtro que ignore mayúsculas y minúsculas
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
+                }
             }
-        } catch (NumberFormatException ex) {
-            mostrarMensaje("El ID debe ser un número válido.");
-        }
-    }
-});
+        });
+
         
         searchPanel.add(lblBuscar);
         searchPanel.add(txtBuscar);

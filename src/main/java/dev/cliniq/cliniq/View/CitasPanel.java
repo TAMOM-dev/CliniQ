@@ -7,17 +7,33 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import dev.cliniq.cliniq.Model.Cita;
+import dev.cliniq.cliniq.Model.Paciente;
 import dev.cliniq.cliniq.Service.citaService;
+import dev.cliniq.cliniq.Service.consultorioService;
+import dev.cliniq.cliniq.Service.medicoService;
+import dev.cliniq.cliniq.Service.pacienteService;
 
 
 @Component
 public class CitasPanel extends JPanel {
     @Autowired
     private citaService citaService;
+
+    @Autowired
+    private pacienteService pacienteService;
+
+    @Autowired
+    private medicoService medicoService;
+
+    @Autowired
+    private consultorioService consultorioService;
 
     // Colores de la aplicación
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
@@ -44,6 +60,19 @@ public class CitasPanel extends JPanel {
     public CitasPanel(citaService citaServicio) {
         this.citaService = citaServicio;
         initComponents();
+        // btnGuardar.addActionListener(new ActionListener() {
+        //     @Override
+        //     public void actionPerformed(ActionEvent e) {
+        //         String idTexto = txtIdCita.getText().trim();
+        //         if (idTexto.isEmpty()) {
+        //             // Lógica para agregar un nuevo Cita
+        //             agregarCita();
+        //         } else {
+        //             // Lógica para actualizar un Cita existente
+        //             actualizarCita();
+        //         }
+        //     }
+        // });
         listarCitas();
     }
     
@@ -289,4 +318,13 @@ public class CitasPanel extends JPanel {
         });
 
     }
+
+
+    private void mostrarMensaje(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje);
+    }
+
+    
 }
+
+

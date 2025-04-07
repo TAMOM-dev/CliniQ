@@ -2,12 +2,13 @@ package dev.cliniq.cliniq.View;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -85,32 +86,22 @@ public class MedicosPanel extends JPanel {
         btnBuscar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String idTexto = txtBuscar.getText().trim();
-                if (idTexto.isEmpty()) {
-                    mostrarMensaje("Ingrese el ID del médico a buscar.");
-                    return;
-                }
-                try {
-                    Long idMedico = Long.parseLong(idTexto);
-                    // Utiliza el servicio para buscar el médico por su ID
-                    Medico medico = medicoService.buscarMedicoPorId(idMedico);
-                    if (medico != null) {
-                        // Si se encuentra, llena los campos del formulario con los datos del médico
-                        txtIdMedico.setText(String.valueOf(medico.getIdMedico()));
-                        txtNombre.setText(medico.getNombre());
-                        txtApellido.setText(medico.getApellido());
-                        txtEmail.setText(medico.getEmail());
-                        txtTelefono.setText(medico.getTelefono());
-                        txtEspecialidad.setText(medico.getEspecialidad());
-                    } else {
-                        mostrarMensaje("No se encontró un médico con el ID proporcionado.");
-                        limpiarFormulario();
-                    }
-                } catch (NumberFormatException ex) {
-                    mostrarMensaje("El ID debe ser un número válido.");
-                }
-            }
-        });
+                String searchText = txtBuscar.getText().trim();
+        
+        // Creamos el sorter para la tabla con el modelo correspondiente
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModelMedicos);
+        tableMedicos.setRowSorter(sorter);
+        
+        // Si el campo de búsqueda está vacío, se remueve el filtro
+        if (searchText.length() == 0) {
+            sorter.setRowFilter(null);
+        } else {
+            // Se aplica un filtro que ignore mayúsculas y minúsculas
+            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
+        }
+    }
+});
+
         
         searchPanel.add(lblBuscar);
         searchPanel.add(txtBuscar);
