@@ -45,12 +45,18 @@ public class PacientePanel extends JPanel {
     private JButton btnBuscar;
 
 
-    // Constructor sin argumentos requerido para Spring
     @Autowired
     public PacientePanel(pacienteService pacienteServicio) {
         this.pacienteService = pacienteServicio;
         initComponents();
-        listarPacientes();
+        btnGuardar.addActionListener(e -> agregarPaciente());
+
+        // btnGuardar.addActionListener(new ActionListener() {
+        //     @Override
+        //     public void actionPerformed(ActionEvent e) {
+        //         guardarPaciente();
+        //     }
+        // });
     }
     
     private void initComponents() {
@@ -226,6 +232,9 @@ public class PacientePanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
             }
         });
+
+        listarPacientes();
+
     }
     
     private JPanel createFormField(String labelText, JTextField textField) {
@@ -318,6 +327,40 @@ public class PacientePanel extends JPanel {
         }
     }
     
+    private void agregarPaciente() {
+        if(txtNombre.getText().equals("")) {
+            mostrarMensaje("Debe completar todos los campos");
+            txtNombre.requestFocusInWindow();
+            return;
+        }
 
+        var nombrePaciente = txtNombre.getText();
+        var apellidoPaciente = txtApellido.getText();
+        var emailPaciente = txtEmail.getText();
+        var direccionPaciente = txtDireccion.getText();
+        var fechaNacimientoPaciente = txtFechaNacimiento.getText();
+        var telefonoPaciente = txtTelefono.getText();
+        //Crear nuevo paciente
+        var paciente = new Paciente();
+        paciente.setNombre(nombrePaciente);
+        paciente.setApellido(apellidoPaciente);
+        paciente.setEmail(emailPaciente);
+        paciente.setDireccion(direccionPaciente);
+        paciente.setFechaNacimiento(fechaNacimientoPaciente);
+        paciente.setTelefono(telefonoPaciente);
+
+        //Guardar nuevo paciente en la base de datos
+        pacienteService.guardarPaciente(paciente);
+
+        //Actualizar tabla
+        listarPacientes();
+
+        //Limpiar formulario
+        limpiarFormulario();
+    }
+
+    private void mostrarMensaje(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje);
+    }
   
 }
