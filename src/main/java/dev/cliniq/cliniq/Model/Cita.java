@@ -40,7 +40,7 @@ public class Cita {
     private Consultorio consultorio;
 
     @Column(name = "fecha_hora")
-    private LocalDate fechaHora;
+    private LocalDate fecha;
 
     private String estado;
 

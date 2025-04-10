@@ -349,6 +349,7 @@ public class MedicosPanel extends JPanel {
     }
 
     private void listarMedicos() {
+        tableModelMedicos.setRowCount(0);
         limpiarFormulario();
         //Obtener Medicos de la base de datos
         var medicos = medicoService.listarMedicos();

@@ -15,7 +15,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 import dev.cliniq.cliniq.Service.pacienteService;
 
@@ -39,7 +41,7 @@ public class PacientePanel extends JPanel {
     private JTextField txtApellido;
     private JTextField txtEmail;
     private JTextField txtDireccion;
-    private JTextField txtFechaNacimiento;
+    private JSpinner spinnerFechaNacimiento;
     private JTextField txtTelefono;
     private JButton btnGuardar;
     private JButton btnLimpiar;
@@ -227,8 +229,16 @@ public class PacientePanel extends JPanel {
         JPanel apellidoPanel = createFormField("Apellido", txtApellido = new JTextField());
         JPanel emailPanel = createFormField("Email", txtEmail = new JTextField());
         JPanel direccionPanel = createFormField("Dirección", txtDireccion = new JTextField());
-        JPanel fechaNacimientoPanel = createFormField("Fecha Nacimiento", txtFechaNacimiento = new JTextField());
+
+        //Modelo del Spinner
+        spinnerFechaNacimiento = new JSpinner(new SpinnerDateModel());
+        spinnerFechaNacimiento.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JSpinner.DateEditor editor = new JSpinner.DateEditor(spinnerFechaNacimiento, "dd/MM/yyyy");
+        spinnerFechaNacimiento.setEditor(editor);
+
+        JPanel fechaNacimientoPanel = createFormField("Fecha Nacimiento", spinnerFechaNacimiento);
         JPanel telefonoPanel = createFormField("Teléfono", txtTelefono = new JTextField());
+
         
         // Panel de botones
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -322,7 +332,7 @@ public class PacientePanel extends JPanel {
 
     }
     
-    private JPanel createFormField(String labelText, JTextField textField) {
+    private JPanel createFormField(String labelText, JComponent component) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.setBackground(COLOR_BACKGROUND);
@@ -331,15 +341,35 @@ public class PacientePanel extends JPanel {
         label.setForeground(COLOR_TEXT);
         label.setPreferredSize(new Dimension(150, 25));
         label.setMaximumSize(new Dimension(150, 25));
+
+        component.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+
+        if (component instanceof JTextField) {
+            JTextField textField = (JTextField) component;
+            textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_PRIMARY),
+                BorderFactory.createEmptyBorder(2, 5, 2, 5)
+            ));
+        } else if (component instanceof JSpinner) {
+            JSpinner spinner = (JSpinner) component;
+            spinner.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_PRIMARY),
+                BorderFactory.createEmptyBorder(2, 5, 2, 5)
+            ));
+            JComponent editor = spinner.getEditor();
+            if (editor instanceof JSpinner.DefaultEditor) {
+                ((JSpinner.DefaultEditor) editor).getTextField().setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            }
+        }
         
-        textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-        textField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(COLOR_PRIMARY),
-            BorderFactory.createEmptyBorder(2, 5, 2, 5)
-        ));
+        // textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        // textField.setBorder(BorderFactory.createCompoundBorder(
+        //     BorderFactory.createLineBorder(COLOR_PRIMARY),
+        //     BorderFactory.createEmptyBorder(2, 5, 2, 5)
+        // ));
         
         panel.add(label);
-        panel.add(textField);
+        panel.add(component);
         
         return panel;
     }
@@ -350,7 +380,7 @@ public class PacientePanel extends JPanel {
         txtApellido.setText("");
         txtEmail.setText("");
         txtDireccion.setText("");
-        txtFechaNacimiento.setText("");
+        spinnerFechaNacimiento.setValue(new Date()); // Establecer fecha actual al limpiar
         txtTelefono.setText("");
         tablePacientes.clearSelection();
     }
@@ -401,11 +431,12 @@ public class PacientePanel extends JPanel {
             txtDireccion.setText(paciente.getDireccion());
             
             // Formatear la fecha si no es nula
-            if (paciente.getFechaNacimiento() != null) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                txtFechaNacimiento.setText(paciente.getFechaNacimiento().format(formatter));
+            LocalDate fechaNacimiento = paciente.getFechaNacimiento();
+            if (fechaNacimiento != null) {
+                Date date = Date.from(fechaNacimiento.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                spinnerFechaNacimiento.setValue(date);
             } else {
-                txtFechaNacimiento.setText("");
+                spinnerFechaNacimiento.setValue(new Date()); // Opcional: establecer un valor por defecto si es null
             }
             
             txtTelefono.setText(paciente.getTelefono());
@@ -426,7 +457,10 @@ public class PacientePanel extends JPanel {
         var apellidoPaciente = txtApellido.getText().trim();
         var emailPaciente = txtEmail.getText().trim();
         var direccionPaciente = txtDireccion.getText().trim();
-        var fechaNacimientoPaciente = txtFechaNacimiento.getText().trim();
+        // Obtener fecha del spinner
+        Date fechaNacimientoDate = (Date) spinnerFechaNacimiento.getValue();
+        LocalDate fechaNacimiento = fechaNacimientoDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    
         var telefonoPaciente = txtTelefono.getText().trim();
 
         // Crear una nueva instancia de Paciente
@@ -435,21 +469,10 @@ public class PacientePanel extends JPanel {
         paciente.setApellido(apellidoPaciente);
         paciente.setEmail(emailPaciente);
         paciente.setDireccion(direccionPaciente);
+        paciente.setFechaNacimiento(fechaNacimiento);
         paciente.setTelefono(telefonoPaciente);
 
-        // Si se ingresó una fecha, convertirla de String a LocalDate
-        if (!fechaNacimientoPaciente.isEmpty()) {
-            try {
-            // Suponiendo que el formato es "yyyy-MM-dd"
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                var fechaNacimiento = LocalDate.parse(fechaNacimientoPaciente, formatter);
-                paciente.setFechaNacimiento(fechaNacimiento);
-            } catch (Exception e) {
-                mostrarMensaje("Fecha de nacimiento inválida. Utilice el formato yyyy-MM-dd");
-                txtFechaNacimiento.requestFocusInWindow();
-                return;
-            }
-        }
+        
 
         // Guardar el paciente usando el servicio de Spring Boot
         pacienteService.guardarPaciente(paciente);
@@ -478,8 +501,15 @@ public class PacientePanel extends JPanel {
             txtEmail.setText(emailPaciente);
             String direccionPaciente = tablePacientes.getModel().getValueAt(renglon, 4).toString();
             txtDireccion.setText(direccionPaciente);
-            String fechaNacimientoPaciente = tablePacientes.getModel().getValueAt(renglon, 5).toString();
-            txtFechaNacimiento.setText(fechaNacimientoPaciente);
+
+            // Formatear la fecha si no es nula
+            Object fechaNacimientoObj = tablePacientes.getModel().getValueAt(renglon, 5);
+            if (fechaNacimientoObj instanceof LocalDate) {
+                LocalDate fechaNacimiento = (LocalDate) fechaNacimientoObj;
+                Date date = Date.from(fechaNacimiento.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                spinnerFechaNacimiento.setValue(date);
+            }
+            
             String telefonoPaciente = tablePacientes.getModel().getValueAt(renglon, 6).toString();
             txtTelefono.setText(telefonoPaciente);
         }
@@ -502,29 +532,21 @@ public class PacientePanel extends JPanel {
             var apellidoPaciente = txtApellido.getText();
             var emailPaciente = txtEmail.getText();
             var direccionPaciente = txtDireccion.getText();
+
+            // Obtener fecha del spinner
+            Date fechaNacimientoDate = (Date) spinnerFechaNacimiento.getValue();
+            LocalDate fechaNacimiento = fechaNacimientoDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
             var telefonoPaciente = txtTelefono.getText();
-            var fechaNacimientoPaciente = txtFechaNacimiento.getText();
             var paciente = new Paciente();
+
             paciente.setIdPaciente(idPaciente);
             paciente.setNombre(nombrePaciente);
             paciente.setApellido(apellidoPaciente);
             paciente.setEmail(emailPaciente);
             paciente.setDireccion(direccionPaciente);
+            paciente.setFechaNacimiento(fechaNacimiento);
             paciente.setTelefono(telefonoPaciente);
-            
-            // Si se ingresó una fecha, convertirla de String a LocalDate
-            if (!fechaNacimientoPaciente.isEmpty()) {
-             try {
-                // Suponiendo que el formato es "yyyy-MM-dd"
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                    var fechaNacimiento = LocalDate.parse(fechaNacimientoPaciente, formatter);
-                    paciente.setFechaNacimiento(fechaNacimiento);
-                } catch (Exception e) {
-                    mostrarMensaje("Fecha de nacimiento inválida. Utilice el formato yyyy-MM-dd");
-                    txtFechaNacimiento.requestFocusInWindow();
-                    return;
-                }
-            }
 
             pacienteService.guardarPaciente(paciente);
             mostrarMensaje("Paciente actualizado con éxito");

@@ -2,19 +2,22 @@ package dev.cliniq.cliniq.View;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import dev.cliniq.cliniq.Model.Cita;
-import dev.cliniq.cliniq.Model.Paciente;
 import dev.cliniq.cliniq.Service.citaService;
 import dev.cliniq.cliniq.Service.consultorioService;
 import dev.cliniq.cliniq.Service.medicoService;
@@ -48,31 +51,20 @@ public class CitasPanel extends JPanel {
     private JTextField txtIdCita;
     private JTextField txtPaciente;
     private JTextField txtMedico;
-    private JTextField txtFecha;
-    private JTextField txtHora;
+    private JSpinner spinnerFecha;
+    private JComboBox<String> comboEstado;
     private JTextField txtConsultorio;
-    private JRadioButton radioBtnConfirmado;
-    private JRadioButton radioBtnPendiente;
     private JButton btnGuardar;
     private JButton btnLimpiar;
 
     @Autowired
-    public CitasPanel(citaService citaServicio) {
+    public CitasPanel(citaService citaServicio, pacienteService pacienteService, medicoService medicoService, consultorioService consultorioService) {
         this.citaService = citaServicio;
+        this.pacienteService = pacienteService;
+        this.medicoService = medicoService;
+        this.consultorioService = consultorioService;
         initComponents();
-        // btnGuardar.addActionListener(new ActionListener() {
-        //     @Override
-        //     public void actionPerformed(ActionEvent e) {
-        //         String idTexto = txtIdCita.getText().trim();
-        //         if (idTexto.isEmpty()) {
-        //             // Lógica para agregar un nuevo Cita
-        //             agregarCita();
-        //         } else {
-        //             // Lógica para actualizar un Cita existente
-        //             actualizarCita();
-        //         }
-        //     }
-        // });
+        configurarEventos();
         listarCitas();
     }
     
@@ -92,6 +84,25 @@ public class CitasPanel extends JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setFocusPainted(false);
         btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnBuscar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String searchText = txtBuscar.getText().trim();
+                
+                // Creamos el sorter para la tabla con el modelo correspondiente
+                TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModelCitas);
+                tableCitas.setRowSorter(sorter);
+                
+                // Si el campo de búsqueda está vacío, se remueve el filtro
+                if (searchText.length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    // Se aplica un filtro que ignore mayúsculas y minúsculas
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
+                }
+            }
+        });
         
         searchPanel.add(lblBuscar);
         searchPanel.add(txtBuscar);
@@ -110,7 +121,7 @@ public class CitasPanel extends JPanel {
         
         // Crear modelo de tabla
         this.tableModelCitas = new DefaultTableModel(0, 6);
-        String[] columnas = {"ID", "Paciente", "Médico", "Fecha/Hora", "Consultorio", "Estado"};
+        String[] columnas = {"ID", "Paciente", "Médico", "Fecha", "Consultorio", "Estado"};
         tableModelCitas.setColumnIdentifiers(columnas);
 
         //Inicializar la tabla
@@ -150,10 +161,16 @@ public class CitasPanel extends JPanel {
         
         // Campos de formulario
         JPanel idCitaPanel = createFormField("ID Citas", txtIdCita = new JTextField());
+        txtIdCita.setEditable(false);
         JPanel pacientePanel = createFormField("Paciente", txtPaciente = new JTextField());
         JPanel medicoPanel = createFormField("Médico", txtMedico = new JTextField());
-        JPanel fechaPanel = createFormField("Fecha", txtFecha = new JTextField());
-        JPanel horaPanel = createFormField("Hora", txtHora = new JTextField());
+       
+        spinnerFecha = new JSpinner(new SpinnerDateModel());
+        spinnerFecha.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy");
+        spinnerFecha.setEditor(dateEditor);
+        JPanel fechaPanel = createFormField("Fecha", spinnerFecha);
+
         JPanel consultorioPanel = createFormField("Consultorio", txtConsultorio = new JTextField());
         
         // Panel de estado (radio buttons)
@@ -166,30 +183,13 @@ public class CitasPanel extends JPanel {
         lblEstado.setPreferredSize(new Dimension(150, 25));
         lblEstado.setMaximumSize(new Dimension(150, 25));
         
-        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        radioPanel.setBackground(COLOR_BACKGROUND);
+        JPanel comboPanel = createFormField("Estado", comboEstado = new JComboBox<>());
+        comboEstado.addItem("Confirmado");
+        comboEstado.addItem("Pendiente");
+        comboEstado.setBackground(COLOR_BACKGROUND);
+        comboEstado.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         
-        radioBtnConfirmado = new JRadioButton("confirmado");
-        radioBtnConfirmado.setBackground(COLOR_PRIMARY);
-        radioBtnConfirmado.setForeground(COLOR_BACKGROUND);
-        radioBtnConfirmado.setFocusPainted(false);
-        radioBtnConfirmado.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        radioBtnPendiente = new JRadioButton("pendiente");
-        radioBtnPendiente.setBackground(COLOR_BUTTON);
-        radioBtnPendiente.setForeground(COLOR_BACKGROUND);
-        radioBtnPendiente.setFocusPainted(false);
-        radioBtnPendiente.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        ButtonGroup estadoGroup = new ButtonGroup();
-        estadoGroup.add(radioBtnConfirmado);
-        estadoGroup.add(radioBtnPendiente);
-        
-        radioPanel.add(radioBtnConfirmado);
-        radioPanel.add(radioBtnPendiente);
-        
-        estadoPanel.add(lblEstado);
-        estadoPanel.add(radioPanel);
+        estadoPanel.add(comboPanel);
         
         // Panel de botones
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -243,8 +243,6 @@ public class CitasPanel extends JPanel {
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         formPanel.add(fechaPanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        formPanel.add(horaPanel);
-        formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         formPanel.add(consultorioPanel);
         formPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         formPanel.add(estadoPanel);
@@ -267,7 +265,7 @@ public class CitasPanel extends JPanel {
         });
     }
     
-    private JPanel createFormField(String labelText, JTextField textField) {
+    private JPanel createFormField(String labelText, JComponent component) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.setBackground(COLOR_BACKGROUND);
@@ -277,14 +275,33 @@ public class CitasPanel extends JPanel {
         label.setPreferredSize(new Dimension(150, 25));
         label.setMaximumSize(new Dimension(150, 25));
         
-        textField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-        textField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(COLOR_PRIMARY),
-            BorderFactory.createEmptyBorder(2, 5, 2, 5)
-        ));
+        component.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+    
+        if (component instanceof JTextField) {
+            JTextField textField = (JTextField) component;
+            textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_PRIMARY),
+                BorderFactory.createEmptyBorder(2, 5, 2, 5)
+            ));
+        } else if (component instanceof JSpinner) {
+            JSpinner spinner = (JSpinner) component;
+            spinner.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_PRIMARY),
+                BorderFactory.createEmptyBorder(2, 5, 2, 5)
+            ));
+            JComponent editor = spinner.getEditor();
+            if (editor instanceof JSpinner.DefaultEditor) {
+                ((JSpinner.DefaultEditor) editor).getTextField().setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            }
+        } else if (component instanceof JComboBox) {
+            component.setPreferredSize(new Dimension(component.getPreferredSize().width, 25));
+            JComboBox<?> comboBox = (JComboBox<?>) component;
+            comboBox.setBackground(COLOR_BACKGROUND);
+            comboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        } 
         
         panel.add(label);
-        panel.add(textField);
+        panel.add(component);
         
         return panel;
     }
@@ -293,38 +310,108 @@ public class CitasPanel extends JPanel {
         txtIdCita.setText("");
         txtPaciente.setText("");
         txtMedico.setText("");
-        txtFecha.setText("");
-        txtHora.setText("");
+        spinnerFecha.setValue(new Date());
         txtConsultorio.setText("");
-        radioBtnConfirmado.setSelected(false);
-        radioBtnPendiente.setSelected(false);
+        comboEstado.setSelectedIndex(0);
     }
 
     private void listarCitas() {
-        limpiarFormulario();
-        //Obtener Medicos de la base de datos
-        var citas = citaService.listarCitas();
-        citas.forEach((cita) -> {
-            Object[] renglonCita = {
+        tableModelCitas.setRowCount(0);
+        citaService.listarCitas().forEach(cita -> {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            Object[] fila = {
                 cita.getIdCita(),
                 cita.getPaciente().getNombre(),
                 cita.getMedico().getNombre(),
-                cita.getFechaHora(),
-                cita.getConsultorio(),
+                cita.getFecha().format(formatter),
+                cita.getConsultorio().getNumero(),
                 cita.getEstado()
             };
-
-            this.tableModelCitas.addRow(renglonCita);
+            tableModelCitas.addRow(fila);
         });
-
     }
-
 
     private void mostrarMensaje(String mensaje) {
         JOptionPane.showMessageDialog(this, mensaje);
     }
 
-    
+    private void configurarEventos() {
+        btnGuardar.addActionListener(e -> {
+            if (txtIdCita.getText().isEmpty()) {
+                agregarCita();
+            } else {
+                actualizarCita();
+            }
+        });
+
+        tableCitas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                cargarCitasSeleccionadas();
+            }
+        });
+    }   
+
+    private void agregarCita() {
+        try {
+            Long idPaciente = Long.parseLong(txtPaciente.getText());
+            Long idMedico = Long.parseLong(txtMedico.getText());
+            Long idConsultorio = Long.parseLong(txtConsultorio.getText());
+            Date fechaDate = (Date)spinnerFecha.getValue();
+            LocalDate fecha = fechaDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            String estado = (String) comboEstado.getSelectedItem();
+
+            Cita nuevaCita = citaService.guardarCita(
+                idPaciente, 
+                idMedico, 
+                idConsultorio, 
+                fecha, 
+                estado
+            );
+
+            listarCitas();
+            limpiarFormulario();
+            mostrarMensaje("Cita agregada con éxito");
+        } catch (Exception e) {
+            mostrarMensaje("Error al agregar la cita " + e.getMessage());
+        }
+    }
+
+    private void actualizarCita() {
+        try {
+            Long idCita = Long.parseLong(txtIdCita.getText());
+            Cita citaExistente = citaService.buscarCitaPorId(idCita);
+
+            //Actualizar campos
+            Date fechaDate = (Date)spinnerFecha.getValue();
+            citaExistente.setFecha(fechaDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            citaExistente.setEstado((String) comboEstado.getSelectedItem());
+            citaService.guardarCita(citaExistente);
+            listarCitas();
+            mostrarMensaje("Cita actualizada con éxito");
+        } catch (Exception e) {
+            mostrarMensaje("Error al actualizar la cita" + e.getMessage());
+        }
+    }
+
+    private void cargarCitasSeleccionadas() {
+        int fila = tableCitas.getSelectedRow();
+        if (fila >= 0) {
+            Long idCita = (Long) tableModelCitas.getValueAt(fila, 0);
+            Cita cita = citaService.buscarCitaPorId(idCita);
+
+            txtIdCita.setText(idCita.toString());
+            txtPaciente.setText(cita.getPaciente().getNombre());
+            txtMedico.setText(cita.getMedico().getNombre());
+            spinnerFecha.setValue(cita.getFecha());
+            comboEstado.setSelectedItem(cita.getEstado());
+
+            Date fecha = Date.from(cita.getFecha().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            spinnerFecha.setValue(fecha);
+            comboEstado.setSelectedItem(cita.getEstado());
+        }
+    }
 }
+
 
 
