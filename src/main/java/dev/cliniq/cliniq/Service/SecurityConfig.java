@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import dev.cliniq.cliniq.Model.Cajera;
 import dev.cliniq.cliniq.Model.Registradora;
 import dev.cliniq.cliniq.Model.TipoUsuario;
 import dev.cliniq.cliniq.Repository.UsuarioRepository;
@@ -21,11 +23,17 @@ public class SecurityConfig {
     public CommandLineRunner initUsers(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             if (usuarioRepository.count() == 0) {
-                Registradora admin = new Registradora();
-                admin.setUserName("admin");
-                admin.setPassword(passwordEncoder.encode("admin"));
-                admin.setTipoUsuario(TipoUsuario.REGISTRADORA);
-                usuarioRepository.save(admin);
+                Registradora registradora = new Registradora();
+                registradora.setUserName("Ana");
+                registradora.setPassword(passwordEncoder.encode("registro"));
+                registradora.setTipoUsuario(TipoUsuario.REGISTRADORA);
+                usuarioRepository.save(registradora);
+
+                Cajera cajera = new Cajera();
+                cajera.setUserName("Teresa");
+                cajera.setPassword(passwordEncoder.encode("caja"));
+                cajera.setTipoUsuario(TipoUsuario.REGISTRADORA);
+                usuarioRepository.save(cajera);
             }
         };
     }
