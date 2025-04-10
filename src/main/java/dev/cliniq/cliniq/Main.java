@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import dev.cliniq.cliniq.View.CliniQInterfaz;
+import dev.cliniq.cliniq.View.CliniQLoginUI;
 
 @SpringBootApplication
 public class Main {
@@ -22,8 +22,8 @@ public class Main {
 		//Ejecutar el programa
 		EventQueue.invokeLater(() -> {
 			//Obtenemos el objeto frame atraves de spring
-			CliniQInterfaz cliniQInterfaz = context.getBean(CliniQInterfaz.class);
-			cliniQInterfaz.setVisible(true);
+			CliniQLoginUI login = context.getBean(CliniQLoginUI.class);
+			login.setVisible(true);
 		});
 	}
 	

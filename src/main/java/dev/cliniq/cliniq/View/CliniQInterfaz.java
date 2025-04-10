@@ -23,7 +23,13 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import org.springframework.stereotype.Component;
+
+import dev.cliniq.cliniq.Model.TipoUsuario;
+import dev.cliniq.cliniq.Model.Usuario;
+import dev.cliniq.cliniq.Service.ApplicationContextProvider;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * Clase que representa la interfaz gráfica de la aplicación CliniQ.
@@ -31,7 +37,19 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author CliniQ
  */
 @Component
+@Lazy
 public class CliniQInterfaz extends JFrame {
+
+    private JPanel inicioPanel;
+    @Autowired
+    private PacientePanel pacientePanel;
+    @Autowired
+    private CitasPanel citasPanel;
+    @Autowired
+    private MedicosPanel medicosPanel;
+    @Autowired
+    private FacturacionPanel facturacionPanel;
+    
     
 
     private static final long serialVersionUID = 1L;
@@ -56,17 +74,7 @@ public class CliniQInterfaz extends JFrame {
     private final Color COLOR_BACKGROUND = Color.WHITE;
     private final Color COLOR_TEXT = new Color(30, 30, 30);
     
-    // Paneles de contenido
-    // @Autowired
-    private JPanel inicioPanel;
-    @Autowired
-    private PacientePanel pacientePanel;
-    @Autowired
-    private CitasPanel citasPanel;
-    @Autowired
-    private MedicosPanel medicosPanel;
-    @Autowired
-    private FacturacionPanel facturacionPanel;
+    
 
     @Autowired
     public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel) {
@@ -76,14 +84,26 @@ public class CliniQInterfaz extends JFrame {
         this.facturacionPanel = facturacionPanel;
         IniciarForm();
     }
+
     
     private void IniciarForm() {
-        setTitle("CliniQ");
+        setTitle("CliniQ - Sistema de Gestión de Citas Médicas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 700); // Tamaño por defecto
+        setSize(1200, 800); // Tamaño por defecto
         setLocationRelativeTo(null); // Centrar en pantalla
         setExtendedState(JFrame.MAXIMIZED_BOTH); // Maximizar la ventana
         setUndecorated(true); // Ocultar la barra de título
+
+        // Botón de logout
+        JButton btnLogout = new JButton("Cerrar Sesión");
+        btnLogout.addActionListener(e -> {
+        this.setVisible(false);
+        ApplicationContextProvider.getApplicationContext().getBean(CliniQLoginUI.class).setVisible(true);
+    });
+
+        JPanel panelSuperior = new JPanel();
+        panelSuperior.add(btnLogout);
+        getContentPane().add(panelSuperior, BorderLayout.NORTH);
 
         // Panel principal que contendrá todo
         contentPanel = new JPanel(new BorderLayout());
@@ -242,7 +262,6 @@ public class CliniQInterfaz extends JFrame {
         contentPanel.add(dynamicContentPanel, BorderLayout.CENTER);
 
         getContentPane().add(contentPanel);
-        setVisible(true);
     }
     
     // Método para cambiar entre paneles
@@ -358,4 +377,28 @@ public class CliniQInterfaz extends JFrame {
         
         return button;
     }
+
+    public void mostrarVistaSegunRol(Usuario usuario) {
+        pacienteButton.setEnabled(false);
+        citasButton.setEnabled(false);
+        medicosButton.setEnabled(false);
+        facturacionButton.setEnabled(false);
+
+        if(usuario.getTipoUsuario() == TipoUsuario.REGISTRADORA) {
+            inicioButton.setEnabled(true);
+            pacienteButton.setEnabled(true);
+            citasButton.setEnabled(true);
+            medicosButton.setEnabled(true);
+            mostrarPanel("Pacientes");
+        } 
+        else if(usuario.getTipoUsuario() == TipoUsuario.CAJERA) {
+            inicioButton.setEnabled(true);
+            facturacionButton.setEnabled(true);
+            mostrarPanel("Facturación");
+        }
+        
+        this.setVisible(true);
+        this.toFront();
+    };
+    
 }
