@@ -49,6 +49,8 @@ public class CliniQInterfaz extends JFrame {
     private MedicosPanel medicosPanel;
     @Autowired
     private FacturacionPanel facturacionPanel;
+    @Autowired
+    private ConsultoriosPanel consultoriosPanel;
     
     
 
@@ -62,11 +64,13 @@ public class CliniQInterfaz extends JFrame {
     private int menuWidth = 150;
     
     // Botones del menú
+    private JButton logoutButton;
     private JButton activeButton; // Botón actualmente seleccionado
     private JButton inicioButton;
     private JButton pacienteButton;
     private JButton citasButton;
     private JButton medicosButton;
+    private JButton consultorioButton;
     private JButton facturacionButton;
     
     // Colores de la aplicación
@@ -95,15 +99,11 @@ public class CliniQInterfaz extends JFrame {
         setUndecorated(true); // Ocultar la barra de título
 
         // Botón de logout
-        JButton btnLogout = new JButton("Cerrar Sesión");
-        btnLogout.addActionListener(e -> {
-        this.setVisible(false);
-        ApplicationContextProvider.getApplicationContext().getBean(CliniQLoginUI.class).setVisible(true);
-    });
-
-        JPanel panelSuperior = new JPanel();
-        panelSuperior.add(btnLogout);
-        getContentPane().add(panelSuperior, BorderLayout.NORTH);
+        logoutButton = createMenuButton("Log Out", "icons/logout.png");
+        logoutButton.addActionListener(e -> {
+            this.setVisible(false);
+            ApplicationContextProvider.getApplicationContext().getBean(CliniQLoginUI.class).setVisible(true);
+        });
 
         // Panel principal que contendrá todo
         contentPanel = new JPanel(new BorderLayout());
@@ -120,7 +120,9 @@ public class CliniQInterfaz extends JFrame {
         pacienteButton = createMenuButton("Pacientes", "icons/paciente.png");
         citasButton = createMenuButton("Citas", "icons/cita.png");
         medicosButton = createMenuButton("Médicos", "icons/medico.png");
+        consultorioButton = createMenuButton("Consultorios", "icons/consultorio.png");
         facturacionButton = createMenuButton("Facturación", "icons/factura.png");
+
 
         // Configurar los event listeners para la navegación
         inicioButton.addActionListener(new ActionListener() {
@@ -154,6 +156,14 @@ public class CliniQInterfaz extends JFrame {
                 mostrarPanel("Médicos");
             }
         });
+
+        consultorioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setActiveButton(consultorioButton);
+                mostrarPanel("Consultorios");
+            }
+        });
         
         facturacionButton.addActionListener(new ActionListener() {
             @Override
@@ -163,17 +173,22 @@ public class CliniQInterfaz extends JFrame {
             }
         });
 
-        menuPanel.add(Box.createRigidArea(new Dimension(0, 30))); // Espacio superior
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 30)));
         menuPanel.add(inicioButton);
-        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Espacio entre botones
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(pacienteButton);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(citasButton);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(medicosButton);
         menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        menuPanel.add(consultorioButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         menuPanel.add(facturacionButton);
-        menuPanel.add(Box.createVerticalGlue()); // Espacio inferior
+        menuPanel.add(Box.createVerticalGlue());
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 20))); // Espacio antes del logout
+        menuPanel.add(logoutButton);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Espacio inferior
 
         // Panel central para el contenido dinámico
         JPanel dynamicContentPanel = new JPanel(new BorderLayout());
@@ -193,21 +208,9 @@ public class CliniQInterfaz extends JFrame {
         headerTitlePanel.add(headerLabel);
         
         // Panel para el botón de cierre (a la derecha)
-        JPanel closePanel = new JPanel();
-        closePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-        closePanel.setBackground(COLOR_PRIMARY);
-        JButton closeButton = new JButton("X");
-        closeButton.setFont(new Font("Arial", Font.BOLD, 14));
-        closeButton.setForeground(COLOR_BACKGROUND);
-        closeButton.setBackground(COLOR_PRIMARY);
-        closeButton.setBorderPainted(false);
-        closeButton.setFocusPainted(false);
-        closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeButton.addActionListener(e -> System.exit(0));
-        closePanel.add(closeButton);
+        
         
         headerPanel.add(headerTitlePanel, BorderLayout.CENTER);
-        headerPanel.add(closePanel, BorderLayout.EAST);
         dynamicContentPanel.add(headerPanel, BorderLayout.NORTH);
 
         
@@ -294,6 +297,9 @@ public class CliniQInterfaz extends JFrame {
                 break;
             case "Médicos":
                 dynamicContentPanel.add(medicosPanel, BorderLayout.CENTER);
+                break;
+            case "Consultorios": // Nuevo caso
+                dynamicContentPanel.add(consultoriosPanel, BorderLayout.CENTER);
                 break;
             case "Facturación":
                 dynamicContentPanel.add(facturacionPanel, BorderLayout.CENTER);
@@ -382,23 +388,29 @@ public class CliniQInterfaz extends JFrame {
         pacienteButton.setEnabled(false);
         citasButton.setEnabled(false);
         medicosButton.setEnabled(false);
+        consultorioButton.setEnabled(false); // Nuevo
         facturacionButton.setEnabled(false);
 
         if(usuario.getTipoUsuario() == TipoUsuario.REGISTRADORA) {
-            inicioButton.setEnabled(true);
             pacienteButton.setEnabled(true);
             citasButton.setEnabled(true);
             medicosButton.setEnabled(true);
+            consultorioButton.setEnabled(true); // Nuevo
+            inicioButton.setEnabled(true);
+            logoutButton.setEnabled(true);
             mostrarPanel("Pacientes");
         } 
         else if(usuario.getTipoUsuario() == TipoUsuario.CAJERA) {
-            inicioButton.setEnabled(true);
             facturacionButton.setEnabled(true);
+            inicioButton.setEnabled(true);
+            logoutButton.setEnabled(true);
             mostrarPanel("Facturación");
         }
+
+        
         
         this.setVisible(true);
         this.toFront();
-    };
+    }
     
 }
