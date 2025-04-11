@@ -51,8 +51,6 @@ public class CliniQInterfaz extends JFrame {
     private FacturacionPanel facturacionPanel;
     @Autowired
     private ConsultoriosPanel consultoriosPanel;
-    
-    
 
     private static final long serialVersionUID = 1L;
     
@@ -77,8 +75,6 @@ public class CliniQInterfaz extends JFrame {
     private final Color COLOR_PRIMARY = new Color(0, 158, 188); // Cyan
     private final Color COLOR_BACKGROUND = Color.WHITE;
     private final Color COLOR_TEXT = new Color(30, 30, 30);
-    
-    
 
     @Autowired
     public CliniQInterfaz(PacientePanel pacientePanel, CitasPanel citasPanel, MedicosPanel medicosPanel, FacturacionPanel facturacionPanel) {
@@ -89,7 +85,6 @@ public class CliniQInterfaz extends JFrame {
         IniciarForm();
     }
 
-    
     private void IniciarForm() {
         setTitle("CliniQ - Sistema de Gestión de Citas Médicas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -122,7 +117,6 @@ public class CliniQInterfaz extends JFrame {
         medicosButton = createMenuButton("Médicos", "icons/medico.png");
         consultorioButton = createMenuButton("Consultorios", "icons/consultorio.png");
         facturacionButton = createMenuButton("Facturación", "icons/factura.png");
-
 
         // Configurar los event listeners para la navegación
         inicioButton.addActionListener(new ActionListener() {
@@ -207,13 +201,9 @@ public class CliniQInterfaz extends JFrame {
         headerLabel.setForeground(COLOR_BACKGROUND); // Texto blanco
         headerTitlePanel.add(headerLabel);
         
-        // Panel para el botón de cierre (a la derecha)
-        
-        
         headerPanel.add(headerTitlePanel, BorderLayout.CENTER);
         dynamicContentPanel.add(headerPanel, BorderLayout.NORTH);
 
-        
         // Crear panel simple para la página de inicio
         inicioPanel = new JPanel(new BorderLayout());
         inicioPanel.setBackground(COLOR_BACKGROUND);
@@ -236,6 +226,22 @@ public class CliniQInterfaz extends JFrame {
         descriptionLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         descriptionLabel.setForeground(COLOR_TEXT);
         descriptionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Añadir la imagen de InicioImage
+        JLabel imageLabel = new JLabel();
+        try {
+            ImageIcon icon = new ImageIcon("icons/InicioImage.png");
+            if (icon.getIconWidth() > 0) { // Verifica si la imagen se cargó correctamente
+                // Redimensionar la imagen a un tamaño adecuado (por ejemplo, 300x300 píxeles)
+                Image img = icon.getImage().getScaledInstance(300, 300, Image.SCALE_SMOOTH);
+                imageLabel.setIcon(new ImageIcon(img));
+                imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            } else {
+                System.err.println("No se pudo cargar la imagen: icons/InicioImage.png");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al cargar la imagen: " + e.getMessage());
+        }
         
         // Paneles para centrar cada elemento
         JPanel welcomeTitlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -245,11 +251,18 @@ public class CliniQInterfaz extends JFrame {
         JPanel descPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         descPanel.setBackground(COLOR_BACKGROUND);
         descPanel.add(descriptionLabel);
+
+        // Panel para la imagen
+        JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        imagePanel.setBackground(COLOR_BACKGROUND);
+        imagePanel.add(imageLabel);
         
         welcomePanel.add(Box.createVerticalGlue());
         welcomePanel.add(welcomeTitlePanel);
         welcomePanel.add(Box.createRigidArea(new Dimension(0, 20)));
         welcomePanel.add(descPanel);
+        welcomePanel.add(Box.createRigidArea(new Dimension(0, 30))); // Espacio entre el texto y la imagen
+        welcomePanel.add(imagePanel);
         welcomePanel.add(Box.createVerticalGlue());
         
         centerPanel.add(welcomePanel);
@@ -298,7 +311,7 @@ public class CliniQInterfaz extends JFrame {
             case "Médicos":
                 dynamicContentPanel.add(medicosPanel, BorderLayout.CENTER);
                 break;
-            case "Consultorios": // Nuevo caso
+            case "Consultorios":
                 dynamicContentPanel.add(consultoriosPanel, BorderLayout.CENTER);
                 break;
             case "Facturación":
@@ -388,29 +401,25 @@ public class CliniQInterfaz extends JFrame {
         pacienteButton.setEnabled(false);
         citasButton.setEnabled(false);
         medicosButton.setEnabled(false);
-        consultorioButton.setEnabled(false); // Nuevo
+        consultorioButton.setEnabled(false);
         facturacionButton.setEnabled(false);
 
-        if(usuario.getTipoUsuario() == TipoUsuario.REGISTRADORA) {
+        if (usuario.getTipoUsuario() == TipoUsuario.REGISTRADORA) {
             pacienteButton.setEnabled(true);
             citasButton.setEnabled(true);
             medicosButton.setEnabled(true);
-            consultorioButton.setEnabled(true); // Nuevo
+            consultorioButton.setEnabled(true);
             inicioButton.setEnabled(true);
             logoutButton.setEnabled(true);
             mostrarPanel("Pacientes");
-        } 
-        else if(usuario.getTipoUsuario() == TipoUsuario.CAJERA) {
+        } else if (usuario.getTipoUsuario() == TipoUsuario.CAJERA) {
             facturacionButton.setEnabled(true);
             inicioButton.setEnabled(true);
             logoutButton.setEnabled(true);
             mostrarPanel("Facturación");
         }
 
-        
-        
         this.setVisible(true);
         this.toFront();
     }
-    
 }
